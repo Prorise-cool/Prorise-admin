@@ -18,10 +18,19 @@
 #       run: bundle audit
 #
 pre-commit:
+  parallel: true
   commands:
     lint:
       glob: "*.{js,jsx,ts,tsx}"
       run: pnpm biome lint {staged_files}
+
+    format:
+      glob: "*.{js,jsx,ts,tsx,json,md}"
+      run: pnpm biome format --write {staged_files}
+      stage_fixed: true
+
+    check-types:
+      run: pnpm tsc --noEmit
 #
 #     - name: rubocop
 #       glob: "*.rb"

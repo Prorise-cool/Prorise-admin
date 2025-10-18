@@ -1,7 +1,5 @@
 function App() {
 	const [count, setCount] = useState(0);
-	let unusedVar = "Prorise";
-	let unusedVar2 = "ctx"
 
 	return (
 		<>
