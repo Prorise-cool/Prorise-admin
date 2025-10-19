@@ -31,6 +31,12 @@ pre-commit:
 
     check-types:
       run: pnpm tsc --noEmit
+
+
+commit-msg:
+  commands:
+      commitlint:
+            run: pnpm commitlint --edit {1}
 #
 #     - name: rubocop
 #       glob: "*.rb"
