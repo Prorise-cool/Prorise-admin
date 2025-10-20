@@ -16,6 +16,7 @@
 		"preview": "vite preview",
 		"preinstall": "npx only-allow pnpm"
 	},
+	"prepare": "lefthook install",
 	"dependencies": {
 		"react": "^19.1.1",
 		"react-dom": "^19.1.1"
