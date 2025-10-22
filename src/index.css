@@ -8,10 +8,10 @@
 
 /* 使用 @theme 指令直接在 CSS 中定制和扩展主题 */
 @theme {
-	/* 定义我们的品牌主色 */
-	--color-brand: #00b96b;
+  /* 定义我们的品牌主色 */
+  --color-brand: #00b96b;
 
-	/* 扩展其他设计令牌 */
-	--font-sans: "Inter", sans-serif;
-	--breakpoint-3xl: 1920px;
+  /* 扩展其他设计令牌 */
+  --font-sans: "Inter", sans-serif;
+  --breakpoint-3xl: 1920px;
 }

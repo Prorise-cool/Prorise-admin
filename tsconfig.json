@@ -1,39 +1,39 @@
 {
-	"compilerOptions": {
-		/* 编译目标配置 */
-		"target": "ESNext", // 编译目标版本，ESNext表示最新的ECMAScript标准
-		"useDefineForClassFields": true, // 使用标准的类字段定义语义
-		"lib": ["DOM", "DOM.Iterable", "ESNext"], // 包含的类型库：DOM API、DOM迭代器、最新ES特性
+  "compilerOptions": {
+    /* 编译目标配置 */
+    "target": "ESNext", // 编译目标版本，ESNext表示最新的ECMAScript标准
+    "useDefineForClassFields": true, // 使用标准的类字段定义语义
+    "lib": ["DOM", "DOM.Iterable", "ESNext"], // 包含的类型库：DOM API、DOM迭代器、最新ES特性
 
-		/* JavaScript支持 */
-		"allowJs": false, // 不允许编译JavaScript文件，只编译TypeScript
-		"skipLibCheck": true, // 跳过声明文件的类型检查，提高编译速度
+    /* JavaScript支持 */
+    "allowJs": false, // 不允许编译JavaScript文件，只编译TypeScript
+    "skipLibCheck": true, // 跳过声明文件的类型检查，提高编译速度
 
-		/* 模块互操作性 */
-		"esModuleInterop": true, // 启用ES模块与CommonJS模块的互操作性
-		"allowSyntheticDefaultImports": true, // 允许从没有默认导出的模块中默认导入
+    /* 模块互操作性 */
+    "esModuleInterop": true, // 启用ES模块与CommonJS模块的互操作性
+    "allowSyntheticDefaultImports": true, // 允许从没有默认导出的模块中默认导入
 
-		/* 开启最严格的类型检查 */
-		"strict": true, // 启用所有严格类型检查选项
-		"forceConsistentCasingInFileNames": true, // 强制文件名大小写一致性
-		"noUnusedLocals": true, // 报告未使用的局部变量错误
-		"noUnusedParameters": true, // 报告未使用的参数错误
-		"noFallthroughCasesInSwitch": true, // 报告switch语句中fallthrough情况的错误
+    /* 开启最严格的类型检查 */
+    "strict": true, // 启用所有严格类型检查选项
+    "forceConsistentCasingInFileNames": true, // 强制文件名大小写一致性
+    "noUnusedLocals": true, // 报告未使用的局部变量错误
+    "noUnusedParameters": true, // 报告未使用的参数错误
+    "noFallthroughCasesInSwitch": true, // 报告switch语句中fallthrough情况的错误
 
-		/* 模块与路径解析 */
-		"module": "ESNext", // 生成的模块代码格式为ESNext
-		"moduleResolution": "bundler", // 模块解析策略，适用于现代打包工具如Vite
-		"resolveJsonModule": true, // 允许导入JSON文件
-		"isolatedModules": true, // 确保每个文件都可以独立编译
-		"noEmit": true, // 不生成输出文件，只进行类型检查
-		"jsx": "react-jsx", // JSX编译方式，使用React 17+的新JSX转换
+    /* 模块与路径解析 */
+    "module": "ESNext", // 生成的模块代码格式为ESNext
+    "moduleResolution": "bundler", // 模块解析策略，适用于现代打包工具如Vite
+    "resolveJsonModule": true, // 允许导入JSON文件
+    "isolatedModules": true, // 确保每个文件都可以独立编译
+    "noEmit": true, // 不生成输出文件，只进行类型检查
+    "jsx": "react-jsx", // JSX编译方式，使用React 17+的新JSX转换
 
-		/* 路径别名配置 */
-		"baseUrl": ".", // 解析非相对模块名的基准目录
-		"paths": {
-			"@/*": ["src/*"] // 路径映射，@/* 映射到 src/* 目录
-		}
-	},
-	"include": ["src", "auto-imports.d.ts"], // 包含src目录和自动导入类型声明文件
-	"references": [{ "path": "./tsconfig.node.json" }] // 项目引用，引用Node.js相关的TypeScript配置
+    /* 路径别名配置 */
+    "baseUrl": ".", // 解析非相对模块名的基准目录
+    "paths": {
+      "@/*": ["src/*"] // 路径映射，@/* 映射到 src/* 目录
+    }
+  },
+  "include": ["src", "auto-imports.d.ts"], // 包含src目录和自动导入类型声明文件
+  "references": [{ "path": "./tsconfig.node.json" }] // 项目引用，引用Node.js相关的TypeScript配置
 }
