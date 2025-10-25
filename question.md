@@ -1,1032 +1,652 @@
+# 第七章. CDD 环境：搭建 Storybook 与主题集成
 
-# 第五章. 主题核心：Design Tokens 与 Vanilla Extract
+组件是现代前端应用的基石。在本章中，我们将搭建 **组件驱动开发 (Component-Driven Development, CDD)** 的核心环境——**Storybook 8**。我们将从零开始，在 Vite (React + TS) 项目中集成它。
 
-{% note default %}
-在第四章，我们成功搭建了 Ant Design + Tailwind CSS 的混合样式基础。然而，一个真正健 robuste, 可维护的主题系统，还需要一个中心化的、类型安全的“设计语言”来驱动它们。本章，我们将引入 **Vanilla Extract**，一个革命性的 **CSS-in-TS** 解决方案。它将成为我们定义 **Design Tokens**（设计规范）和生成原生 **CSS 变量** 的核心引擎。我们将在这里奠定 `Prorise-Admin` 独特视觉风格和高度可定制性的基石。
-{% endnote %}
+我们将直面并解决三大集成“痛点”：
 
-## 5.1. 引入 Vanilla Extract：类型安全的样式基石
+1.  **构建痛点**：如何让 Storybook 的 Vite 实例识别我们的 `tsconfig.json` 路径别名（如 `@/*`）？
+2.  **样式痛点**：如何让 Storybook 正确加载 Tailwind CSS v4 的配置（`@config`）和变体（`@variant`）？
+3.  **主题痛点**：**(本章核心)** 如何将我们在第六章构建的、由 `ThemeProvider` 驱动的动态主题系统（CSS 变量、亮/暗模式、多色板）完美地注入 Storybook，确保所有组件在隔离环境中获得与主应用 **完全一致** 的视觉表现？
 
-我们已经有了 Ant Design (组件库) 和 Tailwind CSS (原子化工具)。为什么还需要引入第三种样式技术 Vanilla Extract？
+## 7.1. 引入 Storybook 8
 
-### 5.1.1. 决策：为何 Vanilla Extract 是主题系统的“必需品”？
+### 7.1.1. 理念：组件驱动开发 (CDD) 的价值
+
+在开始安装之前，我们必须先统一思想：**为什么需要 Storybook？**
+
+传统的“自上而下”开发模式（先做页面，再拼组件）在大型项目中会变得难以维护。而 **组件驱动开发 (CDD)** 是一种“自下而上”的构建策略，它将 **组件** 视为开发的一等公民。
+
+**CDD 的核心思想**：我们应该在 **隔离的环境** 中独立开发和测试每一个组件，然后再将它们组装成页面。
+
+**Storybook** 正是实现 CDD 的业界标准工具。它为我们提供了一个独立于主应用的“工作台”和“组件目录”。
 
 {% chat 架构师的思考, theme = blue %}
-me: Antd 提供了主题定制，Tailwind 也能通过 @theme 定义变量。
-me: 我们的工具箱是不是已经满了？为什么还需要 Vanilla Extract？
+developer: 为什么我们不直接在 `MyApp.tsx` 里开发和测试组件呢？
 
-expert: 这是一个非常好的问题。
-expert: 答案在于，Antd 和 Tailwind 的主题配置，本质上还是“配置式”的。
-expert: 它们缺乏我们构建一个真正工业级主题系统所必需的两个核心特性：**编译时类型安全** 和 **零运行时**。
+architect: 在主应用里开发，意味着你必须启动整个应用。你可能需要处理路由、等待 API 返回、甚至需要先登录才能看到你的组件。
 
-me: 可以具体解释一下“类型安全”吗？
+developer: 这确实很麻烦。
 
-expert: 当然。在 tailwind.config.ts 里，你可以把 `colors.primary` 设为一个无效的颜色值，或者把 `fontSize.lg` 设成一个颜色字符串。
-expert: 这些错误只能在浏览器里看到效果时才被发现。
-expert: 而 Vanilla Extract 允许我们完全使用 **TypeScript** 来定义我们的设计规范。
-expert: 如果你给一个期望是 `px` 或 `rem` 的变量赋了一个颜色值，TypeScript 会在 **你保存文件的那一刻** 就报错。
-expert: 这种编译时的保障，对于大型项目和团队协作来说至关重要。
+architect: Storybook 解决了这个问题。它提供了一个 **隔离沙箱**。在这个沙箱里，你的组件就是主角。你可以模拟它的所有状态（`loading`, `disabled`, `error`），而无需关心应用的其它任何部分。
 
-me: 那么“零运行时”呢？
+developer: 这听起来像是... 单元测试？
 
-expert: 这是 Vanilla Extract 的核心优势。
-expert: 像 Styled Components 或 Emotion 这类传统的 CSS-in-JS 库，需要在浏览器运行时执行 JavaScript 来解析样式、生成类名。这会带来额外的性能开销。
-expert: Vanilla Extract 则是在 **构建时 (build time)**，就将你的 `.css.ts` 文件直接编译成了 **静态的 `.css` 文件**。
-expert: 最终交付给浏览器的，只有最优化的原生 CSS，没有任何额外的 JS 运行时负担。
+architect: 它是 **可视化测试** 和 **交互式文档** 的结合体。你为组件定义的每一种状态（称为一个 "Story"），都会成为一个 **可交互的、活生生的文档**。
 
-me: 我明白了。所以，VE 不是用来替代 Antd 或 Tailwind 写具体样式的，而是用来构建整个主题系统的“地基”和“规范”？
+developer: 我明白了。设计师、产品经理和新来的同事，都可以通过这个“组件目录”快速了解我们的 UI 资产库。
 
-expert: 完全正确！在 Prrorise-Admin 的架构中，它们三者的分工非常清晰：
-
-expert: **Vanilla Extract**: 作为“设计语言的编译器”。
-expert: 它负责读取用 TypeScript 写的 Design Tokens，并将它们编译成全局可用的、类型安全的 CSS 变量。它是我们“唯一事实来源”的实现者。
-
-expert: **Ant Design**: 作为“主题的消费者”。
-expert: 它通过一个适配器，读取这些 CSS 变量或 Tokens，实现自身组件的主题化。
-
-expert: **Tailwind CSS**: 同样作为“主题的消费者”。
-expert: 它通过配置文件，读取这些 CSS 变量或 Tokens，生成与我们设计系统完全一致的原子类。
-
-expert: 它们三者协同工作，构成了一个强大、类型安全且高性能的主题生态系统。
+architect: 完全正确。它强制我们构建 **高内聚、低耦合** 的组件，是提升团队协作效率和项目长期健壮性的关键。
 {% endchat %}
 
-### 5.1.2. 安装 Vanilla Extract 相关依赖
+### 7.1.2. 安装与初始化 Storybook for Vite (React + TS)
 
-现在，我们来安装 Vanilla Extract 的核心库和 Vite 插件。由于这些包只在开发和构建阶段使用，我们将它们安装为开发依赖 (`-D`)。
+Storybook 8 提供了强大的 `init` 命令，可以自动检测我们的项目技术栈（Vite, React, TypeScript）并完成基础配置。
 
-打开终端，执行以下命令：
+**第一步：执行初始化命令**
+
+在您的项目根目录 (`Prorise-Admin` 目录下) 运行：
+
 ```bash
-pnpm add -D @vanilla-extract/css @vanilla-extract/vite-plugin
+pnpm dlx storybook@latest init
 ```
-**依赖解析**:
-*   `@vanilla-extract/css`: 这是 Vanilla Extract 的核心包，提供了所有用于在 TypeScript 中定义样式、主题和 CSS 变量的 API（例如 `style`, `createTheme`, `createThemeContract`, `globalStyle` 等）。
-*   `@vanilla-extract/vite-plugin`: 这是官方提供的 Vite 插件。它的职责是在 Vite 的构建流程中，自动查找、解析并编译所有 `.css.ts` 文件，将其中定义的样式提取为最终的静态 CSS 文件。
 
-### 5.1.3. 配置 Vite 插件
+**第二步：CLI 交互**
 
-安装插件后，我们必须在 `vite.config.ts` 文件中“注册”它，Vite 才能知道如何处理这些特殊的 `.css.ts` 文件。
+Storybook 会自动开始分析您的项目。它非常智能，会检测到您正在使用 `react-vite`。
 
-**文件路径**: `vite.config.ts` (修改)
+`npx` 会自动安装所有必需的依赖项（`@storybook/react-vite`, `@storybook/addon-essentials`, `@storybook/addon-themes` 等），并在您的项目根目录创建两个新内容：
+
+  * `.storybook/` 目录：存放 Storybook 的核心配置文件。
+  * `src/stories/` 目录：存放示例组件和 "stories"。
+
+### 7.1.3. 核心配置文件解析：.storybook/main.ts 与 preview.ts
+
+`init` 命令为我们生成了两个核心配置文件。理解它们的职责至关重要。
+
+#### 1\. `.storybook/main.ts` (主板)
+
+`main.ts` 负责管理 Storybook 的 **核心配置、插件（Addons）和构建设置**。你可以把它想象成 Storybook 的“主板”或“Vite 配置文件”。
+
+**文件路径**: `.storybook/main.ts` (生成的内容)
 
 ```typescript
-import tailwindcss from "@tailwindcss/vite";
-import { vanillaExtractPlugin } from "@vanilla-extract/vite-plugin";
-import react from "@vitejs/plugin-react";
-import AutoImport from "unplugin-auto-import/vite";
-import antdResolver from "unplugin-auto-import-antd";
-import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
-// https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [
-    react(),
-    tsconfigPaths(),
-    tailwindcss(),
-    vanillaExtractPlugin(),
-    AutoImport({
-      // 目标文件类型
-      include: [
-        /\.[tj]sx?$/, // .ts, .tsx, .js, .jsx
-      ],
-      // 自动导入的预设包
-      imports: ["react"],
-      // 使用 antdResolver（注意是小写）
-      resolvers: [antdResolver()],
-      // 自动生成 'auto-imports.d.ts' 类型声明文件
-      dts: "./auto-imports.d.ts",
-      // 解决 ESLint/BiomeJS 报错问题
-      eslintrc: {
-        enabled: true,
-      },
-    }),
+import type { StorybookConfig } from "@storybook/react-vite";
+
+const config: StorybookConfig = {
+  // 1. [关键] 告诉 Storybook 在哪里寻找 "stories" 文件
+  // 这是一个 glob 模式，匹配 src/ 目录下所有 .stories.tsx 或 .mdx 文件
+  "stories": [
+    "../src/**/*.mdx",
+    "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"
   ],
-});
+  // 2. [关键] 注册所有插件 (Addons)
+  // Addons 提供了 Storybook 的所有额外功能，如工具栏、A11y 检查等
+  "addons": [
+    "@chromatic-com/storybook",
+    "@storybook/addon-docs",
+    "@storybook/addon-onboarding",
+    "@storybook/addon-a11y",
+    "@storybook/addon-vitest"
+  ],
 
+  // 3. [关键] 声明框架和构建器
+  "framework": {
+    "name": "@storybook/react-vite",
+    "options": {}
+  }
+};
+export default config;
 ```
-**关键配置点**:
-*   **插件顺序**：在大多数情况下，`vanillaExtractPlugin` 应该放在框架插件（如 `react()`）的后面。这是因为 Vanilla Extract 的 `.css.ts` 文件本身是 TypeScript 代码，如果其中包含 JSX (例如使用了 `sprinkles` 等高级 API)，可能需要先由 `react()` 插件处理。
-*   **无需额外配置**：对于我们的标准设置，`vanillaExtractPlugin()` 不需要任何额外的参数。它会自动查找并处理项目中的所有 `.css.ts` 文件。
 
-### 5.1.4. “Hello World”：创建并验证第一个 `.css.ts` 文件
+#### 2\. `.storybook/preview.ts` (画布)
 
-完成配置后，我们不能只停留在概念上。让我们创建一个最简单的 `theme.css.ts` 文件来亲眼见证 Vanilla Extract 的工作流程。
+`preview.ts` 负责管理所有 Stories **如何被渲染**。你可以把它想象成一个包裹所有组件的全局“画布”或“`index.html`”。
 
-**第一步：创建 `theme.css.ts`**
-
-我们在 `src/theme/` 目录下创建这个文件。它将是我们主题系统的核心入口。
-**文件路径**: `src/theme/theme.css.ts`
+**文件路径**: `.storybook/preview.ts` (生成的内容)
 
 ```typescript
-import { globalStyle } from '@vanilla-extract/css';
+import type { Preview } from '@storybook/react-vite'
 
-// 使用 globalStyle API 来定义一个全局样式
-// 这是一个简单的测试，证明 VE 正在工作
-globalStyle('body', {
-  backgroundColor: 'lightcoral',
-});
+/**
+ * Storybook 预览配置
+ * 
+ * 此文件配置 Storybook 中所有故事的全局设置。
+ * 它定义了故事的渲染方式以及 UI 中可用的工具。
+ */
+const preview: Preview = {
+  /**
+   * 应用于所有故事的全局参数
+   */
+  parameters: {
+    /**
+     * 控件配置
+     * 定义 Storybook 如何自动为组件属性生成控件
+     */
+    controls: {
+      /**
+       * 匹配器定义哪些属性应该被视为特定的控件类型
+       * 基于使用正则表达式模式的属性名称
+       */
+      matchers: {
+        // 匹配此模式的属性将使用颜色选择器控件
+        color: /(background|color)$/i,
+        // 匹配此模式的属性将使用日期选择器控件
+        date: /Date$/i,
+      },
+    },
+
+    /**
+     * 无障碍 (a11y) 插件配置
+     * 使用 axe-core 对故事运行自动化无障碍测试
+     */
+    a11y: {
+      /**
+       * 测试模式决定如何处理 a11y 违规:
+       * - 'todo': 在 UI 中显示违规但不使测试失败(开发模式)
+       * - 'error': 发现违规时使 CI/CD 管道失败(严格模式)
+       * - 'off': 完全禁用 a11y 检查
+       */
+      test: 'todo'
+    }
+  },
+};
+
+export default preview;
 ```
 
-**第二步：在应用入口导入**
 
-为了让 Vite 能够发现并编译这个文件，我们需要在应用的入口处导入它。
-**文件路径**: `src/main.tsx`
-```typescript
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import MyApp from '@/MyApp';
-import '@/index.css';
-import { ConfigProvider, App as AntdApp } from 'antd';
-import '@/theme/theme.css'; // <-- 导入我们的 VE 样式文件
 
-// ... antd 配置 ...
-```
 
-**第三步：验证效果**
 
-重启你的开发服务器（`pnpm dev`）。现在，打开浏览器，你会发现整个页面的背景色变成了刺眼的 `lightcoral` (浅珊瑚色)。
+**第三步：启动并验证**
 
-**这证明了**:
-1.  Vite 成功加载了 `@vanilla-extract/vite-plugin`。
-2.  插件成功找到了 `src/theme/theme.css.ts` 文件。
-3.  插件成功将 `globalStyle` API 调用编译成了真实的 CSS `body { background-color: lightcoral; }`。
-4.  Vite 将编译后的 CSS 注入到了我们的应用中。
+万事俱备，让我们启动 Storybook：
 
-验证成功后，你可以 **删除或注释掉** `theme.css.ts` 中的测试代码，为下一节的正式内容做准备。
-
-{% note success simple %}
-**阶段性成果**：我们成功将 Vanilla Extract 集成到了 `Prorise-Admin` 的构建流程中。我们深刻理解了它在主题架构中扮演的“类型安全基石”和“零运行时 CSS 变量引擎”的关键角色，并通过一个简单的“Hello World”实例，亲眼见证了其工作流程。我们已为下一节深入定义 Design Tokens 做好了万全准备。
-{% endnote %}
-
----
-## 5.2. 定义 Design Tokens
-
-在 `5.1` 节中，我们成功集成了 Vanilla Extract，为使用 TypeScript 定义样式奠定了基础。现在，我们将进入主题系统的核心腹地：在 `src/theme/tokens/` 目录下，**定义我们项目的设计规范**，即 **Design Tokens**。
-
-### 5.2.1. 理念：什么是 Design Tokens？
-
-Design Tokens 是构成我们产品界面视觉风格的所有 **原子化、可命名的设计决策**。它们是设计系统中的“最小单元”，例如：
-
-*   一个特定的蓝色：`#2065D1` (可能命名为 `colorPrimary`)
-*   一个标准的内边距：`16px` (可能命名为 `spacing4`)
-*   一种常用的字体：`'Inter', sans-serif` (可能命名为 `fontFamilySans`)
-
-**核心价值**：将这些原子化的设计决策 **中心化管理**，并赋予它们 **语义化的名称**，可以带来巨大的好处：
-
-1.  **一致性**：确保整个应用（甚至跨平台）的视觉风格高度统一。修改一个 Token，所有使用它的地方都会自动更新。
-2.  **可维护性**：设计师和开发者使用同一套“设计语言”进行沟通和协作，极大降低了维护成本。
-3.  **可扩展性**：基于 Tokens，可以轻松构建多主题（如亮/暗模式、多品牌色）或支持白标 (Whitelabeling)。
-4.  **自动化**：Tokens 可以被工具（如 Vanilla Extract）读取，自动生成 CSS 变量、样式代码，甚至设计文档。
-
-**`src/theme/tokens/` 目录将是我们 `Prorise-Admin` 所有 Design Tokens 的“唯一事实来源 (Single Source of Truth)”。**
-
-### 5.2.2. 工具先行：创建颜色处理函数
-
-在定义颜色之前，我们先来创建两个非常重要的工具函数，它们将极大地增强我们颜色系统的灵活性。
-
-**第一步：安装 `color` 库**
-
-我们需要一个强大的库来解析和操作颜色。
 ```bash
-pnpm add color @types/color
+pnpm storybook
 ```
 
-**第二步：创建 `src/utils/theme.ts`**
-```typescript
-import color from 'color';
+浏览器将自动打开 `http://localhost:6006/`。你现在应该能看到 Storybook 的欢迎界面和 `src/stories` 中的示例组件（如 Button, Header, Page）。
 
-/**
- * 为颜色值添加 alpha 透明度
- * @param colorVal 颜色值 (支持 #hex)
- * @param alpha 透明度 (0-1)
- * @returns rgba 格式的颜色字符串
- */
-export function rgbAlpha(colorVal: string, alpha: number): string {
-  try {
-    return color(colorVal).alpha(alpha).rgb().string();
-  } catch (error) {
-    console.error(`Invalid color value: ${colorVal}`, error);
-    return colorVal; // 出错时返回原值
-  }
-}
-```
-这个 `rgbAlpha` 函数让我们可以在 TypeScript 中就为一个颜色值（如 `#919EAB`）附加透明度，这对于定义交互状态的颜色（如 `hover`, `disabled`）非常有用。
+**请注意：**
+你很可能会发现示例组件的样式是 **混乱** 的（比如按钮没有 Tailwind 样式），并且浏览器的开发者 **控制台充满了错误**，提示 `@/*` 路径无法解析。
 
-{% note info %}
-**注意**: 在后续章节中，我们还会为 `utils/theme.ts` 添加更多工具函数（如 `addChannelStructure` 和 `addColorChannels`）。现在先创建这个基础函数即可。
-{% endnote %}
+**这是完全正常和预期的！**
 
-### 5.2.3. 构建调色盘：`color.ts`
+因为 Storybook 启动了它自己的 Vite 实例，这个实例目前还不知道：
 
-颜色是主题系统中最重要的部分。我们将创建一个 `color.ts` 文件来系统化地定义我们的颜色规范。
+1.  我们项目的 `tsconfig.json` 中定义的 `@/*` 路径别名。
+2.  我们项目的 `src/index.css` 中配置的 Tailwind v4。
 
-**第一步：创建 `color.ts` 并定义基础色**
-**文件路径**: `src/theme/tokens/color.ts`
+在接下来的 `7.2` 节中，我们将逐一解决这些“集成痛点”。
 
-```typescript
-// 定义最基础的黑白色
-export const commonColors = {
-  white: "#FFFFFF",
-  black: "#09090B", // 使用略微柔和的黑色，而非纯 #000000
-};
-
-// 定义一套中性的灰色梯度，用于背景、边框、文本等
-export const grayColors = {
-  "100": "#F9FAFB", "200": "#F4F6F8", "300": "#DFE3E8", "400": "#C4CDD5",
-  "500": "#919EAB", "600": "#637381", "700": "#454F5B", "800": "#1C252E", "900": "#141A21",
-};
-```
-
-**第二步：定义语义化调色板**
-我们不直接在代码中使用 `#00A76F`，而是定义具有“语义”的颜色名称，如 `primary`, `success` 等。
-
-**文件路径**: `src/theme/tokens/color.ts` (追加)
-```typescript
-/**
- * 我们推荐使用 [Eva Color Design](https://colors.eva.design/) 来快速选取这些值，遵守如下的数值即可：
- *  + lighter : 100
- *  + light : 300
- *  + main : 500
- *  + dark : 700
- *  + darker : 900
- */
-export const paletteColors = {
-  primary: {
-    lighter: "#D6E4FF",
-    light: "#84A9FF",
-    default: "#3366FF",
-    dark: "#1939B7",
-    darker: "#091A7A",
-  },
-  success: {
-    lighter: "#D8FBDE",
-    light: "#86E8AB",
-    default: "#36B37E",
-    dark: "#1B806A",
-    darker: "#0A5554",
-  },
-  warning: {
-    lighter: "#FFF5CC",
-    light: "#FFD666",
-    default: "#FFAB00",
-    dark: "#B76E00",
-    darker: "#7A4100",
-  },
-  error: {
-    lighter: "#FFE9D5",
-    light: "#FFAC82",
-    default: "#FF5630",
-    dark: "#B71D18",
-    darker: "#7A0916",
-  },
-  info: {
-    lighter: "#CAFDF5",
-    light: "#61F3F3",
-    default: "#00B8D9",
-    dark: "#006C9C",
-    darker: "#003768",
-  },
-  gray: grayColors,
-};
-```
-
-**第三步：定义交互状态颜色**
-这里，我们开始使用之前创建的 `rgbAlpha` 工具函数。
-**文件路径**: `src/theme/tokens/color.ts` (追加)
-```typescript
-import { rgbAlpha } from '@/utils/theme';
-// ... (其他颜色定义)
-
-// 定义组件在不同交互状态下的颜色 (灰色的不同透明度)
-export const actionColors = {
-  hover: rgbAlpha(grayColors[500], 0.08),    // 悬停状态背景
-  selected: rgbAlpha(grayColors[500], 0.16), // 选中状态背景
-  focus: rgbAlpha(grayColors[500], 0.24),    // 聚焦状态光晕
-  disabled: rgbAlpha(grayColors[500], 0.24), // 禁用状态文本/图标颜色
-  active: rgbAlpha(grayColors[500], 0.24),   // 激活状态
-};
-```
-
-**第四步：组合亮/暗模式的颜色令牌**
-这是实现主题切换的关键。我们基于上面定义的各种颜色，组合出亮色和暗色模式下最终使用的语义颜色令牌。
-
-**文件路径**: `src/theme/tokens/color.ts` (追加)
-```typescript
-// 定义亮色模式下的最终颜色 Token 集合
-export const lightColorTokens = {
-  palette: paletteColors,
-  common: commonColors,
-  action: actionColors,
-  text: {
-    primary: grayColors[800],
-    secondary: grayColors[600],
-    disabled: grayColors[400],
-  },
-  background: {
-    default: grayColors[100],
-    paper: commonColors.white,
-    neutral: grayColors[200],
-  },
-};
-
-// 定义暗色模式下的最终颜色 Token 集合
-export const darkColorTokens = {
-  palette: paletteColors,
-  common: commonColors,
-  action: actionColors,
-  text: {
-    primary: commonColors.white,
-    secondary: grayColors[500],
-    disabled: grayColors[600],
-  },
-  background: {
-    default: grayColors[900],
-    paper: grayColors[800],
-    neutral: rgbAlpha(grayColors[500], 0.12),
-  },
-};
-```
-
-### 5.2.4. 揭秘 `Channel`：解锁 CSS 动态透明度
-
-现在，我们来引入一个更高级的工具函数 `addColorChannels`，它将极大地增强我们颜色系统的灵活性。
-
-{% chat 深度解析：`addColorChannels` 的必要性, theme = blue %}
-me: 为什么我们需要费力地生成像 `primaryChannel: "0 167 111"` 这样的字符串？
-
-expert: 这完全是为了 **在 CSS 中动态计算带透明度的颜色**。
-
-expert: CSS 的 `rgba()` 函数有一个现代语法：`rgba( <rgb channels> / <alpha> )`。
-expert: 例如，`rgba(0 167 111 / 0.5)` 就代表半透明的绿色。
-
-me: 这和我们之前的 `rgbAlpha` 函数有什么不同？
-
-expert: `rgbAlpha` 是在 **TypeScript (构建时)** 计算的，它只能生成一个 **固定** 的透明度颜色。
-expert: 而 `Channel` 机制，是让我们可以在 **浏览器运行时**，用 **原生 CSS** 动态应用 **任意** 透明度。
-
-me: 怎么做到呢？
-
-expert: Vanilla Extract 会将我们的 Tokens 编译成 CSS 变量。
-expert: 比如 `--color-primary: #00A76F;` 和 `--color-primary-channel: 0 167 111;`。
-expert: 这样，当我们需要一个半透明的主色背景时，就可以在 CSS (或 VE 的 style 函数) 中这样写：
-expert: `background-color: rgba(var(--color-primary-channel) / 0.5);`
-
-me: 我明白了！`addColorChannels` 就是为了生成那个 CSS 变量中的 `var(--color-primary-channel)` 部分！
-
-expert: 完全正确！它让我们摆脱了在 TS 中预定义各种透明度颜色的束缚。
-{% endchat %}
-
-**实现颜色通道工具函数**
-
-实际上，我们需要 **两个** 不同的函数来分别处理"契约骨架"和"实际颜色值"。这是确保类型安全的关键。
-
-**文件路径**: `src/utils/theme.ts` (追加)
-```typescript
-import color from 'color';
-import type { themeTokens } from '@/theme/type'; // 引入类型蓝图
-
-/**
- * 为契约骨架添加 channel 结构（用于 createThemeContract）
- * 将 null 转换为 { value: null, channel: null }
- */
-export const addChannelStructure = <T>(obj: T): T => {
-  const result: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
-    if (typeof value === "object" && value !== null) {
-      result[key] = addChannelStructure(value);
-    } else if (value === null) {
-      // 为 null 创建 { value: null, channel: null } 结构
-      result[key] = { value: null, channel: null };
-    } else {
-      result[key] = value;
-    }
-  }
-  return result as T;
-};
-
-/**
- * 为颜色值添加 RGB 通道（用于实际值）
- * 将 "#FF0000" 转换为 { value: "#FF0000", channel: "255 0 0" }
- * 将 "rgba(255, 0, 0, 0.5)" 转换为 { value: "rgba(255, 0, 0, 0.5)", channel: "255 0 0" }
- */
-export const addColorChannels = <T>(obj: T): T => {
-  const result: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
-    if (typeof value === "object" && value !== null) {
-      result[key] = addColorChannels(value);
-    } else if (typeof value === "string") {
-      // 尝试解析任何颜色格式（#hex, rgb, rgba, hsl 等）
-      try {
-        const rgb = color(value).rgb().array().join(" ");
-        result[key] = { value, channel: rgb };
-      } catch {
-        // 如果无法解析为颜色，直接使用原值
-        result[key] = value;
-      }
-    } else {
-      result[key] = value;
-    }
-  }
-  return result as T;
-};
-
-// 导出类型，用于外部引用
-type ThemeTokens = typeof themeTokens;
-type ColorTokens = ThemeTokens["colors"];
-export type ColorTokensWithChannel = {
-  [Category in keyof ColorTokens]: {
-    [Token in keyof ColorTokens[Category]]: ColorTokens[Category][Token] & {
-      channel: string;
-    };
-  };
-};
-```
-
-{% note warning %}
-**为什么需要两个函数？**
-
-1. **`addChannelStructure`**: 专门用于处理 `createThemeContract` 的骨架（所有值都是 `null`）。它将每个 `null` 转换为 `{ value: null, channel: null }` 的结构。
-
-2. **`addColorChannels`**: 专门用于处理实际的颜色值（如 `"#FF0000"` 或 `"rgba(...)"`）。它解析颜色字符串并提取 RGB 通道。
-
-这种分离确保了类型安全，避免了运行时错误，并且不需要使用 `as any` 进行类型断言。
-{% endnote %}
----
-### 5.2.5. 填充其他 Tokens 文件
-
-我们已经完成了最复杂的 `color.ts`。现在，我们按照同样的模式，创建并填充其他 Tokens 文件。这些文件相对简单，主要是定义数值、字符串等，这个没有基准，可以基于我们提供的模板以及 UI 设计稿到规范来填
-
-**文件路径**: `src/theme/tokens/base.ts`
-
-```typescript
-import { breakpointsTokens } from "./breakpoints";
-
-// 基础主题 Token - 定义间距、圆角、断点、透明度、层级等通用设计变量
-export const baseThemeTokens = {
-  // 间距系统 - 用于 margin、padding 等
-  spacing: {
-    0: "0px",
-    1: "4px",
-    2: "8px",
-    3: "12px",
-    4: "16px",
-    5: "20px",
-    6: "24px",
-    7: "28px",
-    8: "32px",
-    10: "40px",
-    12: "48px",
-    16: "64px",
-    20: "80px",
-    24: "96px",
-    32: "128px",
-  },
-  // 圆角系统 - 用于 border-radius
-  borderRadius: {
-    none: "0px",
-    sm: "2px",
-    default: "4px",
-    md: "6px",
-    lg: "8px",
-    xl: "12px",
-    full: "9999px",
-  },
-  // 响应式断点 - 用于媒体查询
-  screens: breakpointsTokens,
-  // 透明度系统 - 用于 opacity 和颜色透明度
-  opacity: {
-    0: "0%",
-    5: "5%",
-    10: "10%",
-    20: "20%",
-    25: "25%",
-    30: "30%",
-    35: "35%",
-    40: "40%",
-    45: "45%",
-    50: "50%",
-    55: "55%",
-    60: "60%",
-    65: "65%",
-    70: "70%",
-    75: "75%",
-    80: "80%",
-    85: "85%",
-    90: "90%",
-    95: "95%",
-    100: "100%",
-    border: "20%",
-    hover: "8%",
-    selected: "16%",
-    focus: "24%",
-    disabled: "80%",
-    disabledBackground: "24%",
-  },
-  // 层级系统 - 定义各组件的 z-index
-  zIndex: {
-    appBar: "10",
-    nav: "20",
-    drawer: "50",
-    modal: "50",
-    snackbar: "50",
-    tooltip: "50",
-    scrollbar: "100",
-  },
-};
-```
-
-**文件路径**: `src/theme/tokens/breakpoints.ts`
-
-```typescript
-// 定义响应式断点，键名通常遵循 Tailwind 规范
-export const breakpointsTokens = {
-  xs: "375px",  // 移动端优先，默认断点
-  sm: "576px",  // 小型设备
-  md: "768px",  // 平板
-  lg: "1024px", // 笔记本
-  xl: "1280px", // 常规桌面
-  "2xl": "1536px", // 大型桌面
-};
-```
-
-**文件路径**: `src/theme/tokens/typography.ts`
-
-```typescript
-// 预设字体族，方便切换
-export const FontFamilyPreset = {
-  openSans: "'Open Sans Variable', sans-serif", // 引入 Google Fonts 或本地字体
-  inter: "'Inter Variable', sans-serif",
-};
-
-// 定义排版相关的规范
-export const typographyTokens = {
-  fontFamily: {
-    openSans: FontFamilyPreset.openSans,
-    inter: FontFamilyPreset.inter,
-  },
-  // 注意：fontSize 值不带单位，方便后续计算和 antd 配置
-  fontSize: { xs: "12", sm: "14", default: "16", lg: "18", xl: "20" },
-  fontWeight: {
-    light: "300",
-    normal: "400",
-    medium: "500",
-    semibold: "600",
-    bold: "700",
-  },
-  lineHeight: { none: "1", tight: "1.25", normal: "1.375", relaxed: "1.5" },
-};
-```
-
-**文件路径**: `src/theme/tokens/shadow.ts`
-
-```typescript
-import Color from "color";
-import { commonColors, paletteColors } from "./color";
-
-// 亮色主题阴影 Token
-export const lightShadowTokens = {
-  none: "none",
-  // 基础阴影梯度 (从小到大)
-  sm: `0 1px 2px 0 ${Color(paletteColors.gray[500]).alpha(0.16)}`, // 轻微阴影
-  default: `0 4px 8px 0 ${Color(paletteColors.gray[500]).alpha(0.16)}`, // 默认阴影
-  md: `0 8px 16px 0 ${Color(paletteColors.gray[500]).alpha(0.16)}`, // 中等阴影
-  lg: `0 12px 24px 0 ${Color(paletteColors.gray[500]).alpha(0.16)}`, // 较大阴影
-  xl: `0 16px 32px 0 ${Color(paletteColors.gray[500]).alpha(0.16)}`, // 超大阴影
-  "2xl": `0 20px 40px 0 ${Color(paletteColors.gray[500]).alpha(0.16)}`, // 超超大阴影
-  "3xl": `0 24px 48px 0 ${Color(paletteColors.gray[500]).alpha(0.16)}`, // 最大阴影
-  inner: `inset 0 2px 4px 0 ${Color(paletteColors.gray[500]).alpha(0.16)}`, // 内阴影
-
-  // 特定组件阴影
-  dialog: `-40px 40px 80px -8px ${Color(commonColors.black).alpha(0.24)}`, // 对话框阴影
-  card: `0 0 2px 0 ${Color(paletteColors.gray[500]).alpha(0.2)}, 0 12px 24px -4px ${Color(paletteColors.gray[500]).alpha(0.12)}`, // 卡片阴影
-  dropdown: `0 0 2px 0 ${Color(paletteColors.gray[500]).alpha(0.24)}, -20px 20px 40px -4px ${Color(paletteColors.gray[500]).alpha(0.24)}`, // 下拉菜单阴影
-
-  // 语义化阴影 (带品牌色调)
-  primary: `0 8px 16px 0 ${Color(paletteColors.primary.default).alpha(0.24)}`, // 主色调阴影
-  info: `0 8px 16px 0 ${Color(paletteColors.info.default).alpha(0.24)}`, // 信息色阴影
-  success: `0 8px 16px 0 ${Color(paletteColors.success.default).alpha(0.24)}`, // 成功色阴影
-  warning: `0 8px 16px 0 ${Color(paletteColors.warning.default).alpha(0.24)}`, // 警告色阴影
-  error: `0 8px 16px 0 ${Color(paletteColors.error.default).alpha(0.24)}`, // 错误色阴影
-};
-
-// 暗色主题阴影 Token
-export const darkShadowTokens = {
-  none: "none",
-  // 基础阴影梯度 (从小到大)
-  sm: `0 1px 2px 0 ${Color(commonColors.black).alpha(0.16)}`, // 轻微阴影
-  default: `0 4px 8px 0 ${Color(commonColors.black).alpha(0.16)}`, // 默认阴影
-  md: `0 8px 16px 0 ${Color(commonColors.black).alpha(0.16)}`, // 中等阴影
-  lg: `0 12px 24px 0 ${Color(commonColors.black).alpha(0.16)}`, // 较大阴影
-  xl: `0 16px 32px 0 ${Color(commonColors.black).alpha(0.16)}`, // 超大阴影
-  "2xl": `0 20px 40px 0 ${Color(commonColors.black).alpha(0.16)}`, // 超超大阴影
-  "3xl": `0 24px 48px 0 ${Color(commonColors.black).alpha(0.16)}`, // 最大阴影
-  inner: `inset 0 2px 4px 0 ${Color(commonColors.black).alpha(0.16)}`, // 内阴影
-
-  // 特定组件阴影
-  dialog: `-40px 40px 80px -8px ${Color(commonColors.black).alpha(0.24)}`, // 对话框阴影
-  card: `0 0 2px 0 ${Color(commonColors.black).alpha(0.2)}, 0 12px 24px -4px ${Color(commonColors.black).alpha(0.12)}`, // 卡片阴影
-  dropdown: `0 0 2px 0 ${Color(commonColors.black).alpha(0.24)}, -20px 20px 40px -4px ${Color(commonColors.black).alpha(0.24)}`, // 下拉菜单阴影
-
-  // 语义化阴影 (带品牌色调)
-  primary: `0 8px 16px 0 ${Color(paletteColors.primary.default).alpha(0.24)}`, // 主色调阴影
-  info: `0 8px 16px 0 ${Color(paletteColors.info.default).alpha(0.24)}`, // 信息色阴影
-  success: `0 8px 16px 0 ${Color(paletteColors.success.default).alpha(0.24)}`, // 成功色阴影
-  warning: `0 8px 16px 0 ${Color(paletteColors.warning.default).alpha(0.24)}`, // 警告色阴影
-  error: `0 8px 16px 0 ${Color(paletteColors.error.default).alpha(0.24)}`, // 错误色阴影
-};
-
-```
-
-> **注意**：`shadow.ts` 引入了 `color` 库来动态计算带透明度的阴影颜色。我们需要安装它：`pnpm add color @types/color`。
-
-{% note success simple %}
-**阶段性成果**：我们成功地在 `src/theme/tokens/` 目录下，使用 TypeScript 定义了 `Prorise-Admin` 的核心 Design Tokens，涵盖了颜色（支持亮/暗模式和颜色通道）、间距、圆角、断点、排版和阴影。这些 Tokens 不仅是类型安全的，而且结构清晰、语义明确，构成了我们主题系统的“唯一事实来源”。
-{% endnote %}
 
 -----
-## 5.3. 生成 CSS 变量：Vanilla Extract 的魔法
+## 7.2. 解决核心集成痛点
 
-我们已经在 `5.2` 节精心定义了 `Prorise-Admin` 的 Design Tokens (`color.ts`, `base.ts` 等)，它们是项目视觉风格的“唯一事实来源”。但这些 TypeScript 对象本身并不能被浏览器直接理解。
+在 `7.1` 节的末尾，我们成功启动了 Storybook。但我们也立刻发现了两个严重的问题：
 
-本节的核心任务，就是利用 Vanilla Extract 的强大 API，将这些 **静态的 TS 定义** 转化为 **动态的、可在浏览器中使用的 CSS 自定义属性（CSS 变量）**。我们将聚焦于 `src/theme/theme.css.ts` 文件，一步步揭示其工作原理。
+1.  **控制台报错**：Vite 构建失败，提示它无法解析 `@/*` 这样的路径。
+2.  **样式丢失**：`src/stories` 中的示例 `Button` 组件没有任何 Tailwind 样式，显示为浏览器默认按钮。
 
-### 5.3.1. 前置准备：定义主题相关的枚举
+这是因为 Storybook 运行在 **它自己的、隔离的 Vite 实例** 中，这个实例默认 **并不知道** 我们主项目 `vite.config.ts` 和 `tsconfig.json` 中的配置。
 
-在开始生成 CSS 变量之前，我们需要先定义一些全局的、可复用的常量，特别是用于区分不同主题状态的“枚举”。这将极大地提升我们代码的可读性和类型安全。
+本节，我们将逐一修复这些集成痛点。
 
-我们将专门创建一个文件来存放这些枚举。
+### 7.2.1. 痛点一：适配 Vite 路径别名 (`@/*`)
 
-**第一步：创建 `src/theme/types/enum.ts`**
+#### 1\. 问题的根源
+
+当 Storybook 的 Vite 实例遇到 `import { Foo } from '@/components/Foo'` 这样的语句时，它并不知道 `@` 指向 `src`。这个映射关系定义在 `tsconfig.json` 的 `paths` 字段中，Storybook 的 Vite 实例默认不会读取它。
+
+#### 2\. 解决方案：`vite-tsconfig-paths`
+
+我们需要一个 Vite 插件，它能自动读取 `tsconfig.json` 中的 `paths` 并将其转换为 Vite 的 `resolve.alias` 配置。`vite-tsconfig-paths` 正是为此而生。
+
+**第一步：安装插件**
+我们将这个插件添加为 **开发依赖**：
+
 ```bash
-# 在 src/theme 目录下创建 types 文件夹
-mkdir src/theme/types
-touch src/theme/types/enum.ts
+pnpm add -D vite-tsconfig-paths
 ```
-**第二步：定义核心枚举**
-**文件路径**: `src/theme/types/enum.ts`
+
+#### 3\. 配置 Storybook 的 Vite 实例 (`main.ts`)
+
+Storybook 在 `.storybook/main.ts` 中提供了一个名为 `viteFinal` 的钩子。这个函数允许我们“侵入” Storybook 内部的 Vite 配置，并对其进行修改。
+
+**文件路径**: `.storybook/main.ts` (修改)
+
 ```typescript
+import type { StorybookConfig } from "@storybook/react-vite";
+// 1. 导入 Vite 的 mergeConfig 和我们要用的插件
+import { mergeConfig } from "vite";
+import viteTsconfigPaths from "vite-tsconfig-paths";
+
+const config: StorybookConfig = {
+	stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
+	addons: [
+		"@chromatic-com/storybook",
+		"@storybook/addon-docs", // 用于文档生成
+		"@storybook/addon-onboarding", // 用于引导用户
+		"@storybook/addon-a11y", // 用于无障碍测试
+		"@storybook/addon-vitest",
+	],
+	framework: {
+		name: "@storybook/react-vite",
+		options: {},
+	},
+	// 3. [新增] 添加 viteFinal 钩子
+	async viteFinal(config) {
+		// 4. 使用 mergeConfig 合并我们的自定义配置
+		return mergeConfig(config, {
+			// 5. 添加 tsconfig-paths 插件
+			//    它会自动读取 tsconfig.json 中的 paths
+			plugins: [viteTsconfigPaths()],
+		});
+	},
+};
+export default config;
+```
+
+**代码深度解析**：
+
+  * `viteFinal` 是一个 `async` 函数，它接收 Storybook 默认的 Vite 配置 (`config`)。
+  * 我们使用 Vite 官方的 `mergeConfig` 工具来安全地合并配置。
+  * `plugins: [viteTsconfigPaths()]` 指示 Storybook 的 Vite 实例在启动时运行 `vite-tsconfig-paths` 插件，从而动态地将 `@/*` 解析为 `./src/*`。
+
+-----
+
+### 7.2.2. 痛点二：让 Tailwind CSS v4 生效
+
+此时，如果你重新启动 Storybook (`pnpm storybook`)，你会发现 **控制台的 `@/*` 错误消失了**。
+
+**但是，按钮的样式依然没有加载。**
+
+#### 1\. 问题的根源
+
+路径别名问题解决了，但 Storybook 的“画布”（`preview.ts`）它 **没有加载** 我们包含所有 Tailwind 指令（`@import`, `@config`, `@variant`）的 **全局 CSS 文件** `src/index.css`。
+
+#### 2\. 解决方案：在 `preview.ts` 中全局导入 CSS
+
+`preview.ts` 的作用就是配置“画布”。我们只需在 `preview.ts` 的最顶层 `import` 我们的主 CSS 文件，Storybook 就会在加载所有 "stories" 之前，确保这些样式被注入。
+
+**文件路径**: `.storybook/preview.ts` (修改)
+
+```typescript
+// 1. [新增] 全局导入主 CSS 文件
+// 这会触发 Vite 的 CSS 处理, 加载 Tailwind、PostCSS
+// 并应用我们在 index.css 中定义的 @config 和 @variant
+import "../src/theme/theme.css";
+import "../src/index.css";
+```
+
+**代码深度解析**：
+
+  * `import '../src/index.css';` 这一行代码是激活 Tailwind 的关键。
+  * 当 Storybook 的 Vite 实例（已由 `@storybook/react-vite` 预配置好 PostCSS）处理这个导入时，它会：
+    1.  读取 `src/index.css`。
+    2.  执行 `@import "tailwindcss";`。
+    3.  执行 `@config "../tailwind.config.ts";`，加载我们的 Tailwind 配置（得益于 `7.2.1`，配置中的 `@/` 路径也能被正确解析）。
+    4.  执行 `@variant dark (...)`，定义暗黑模式。
+    5.  最终将所有处理过的 CSS 注入到 Storybook 的 `iframe` 画布中。
+
+**文件路径**: `src/stories/Button.tsx` (修改)
+
+我们可以简单的写上一点 Tailwind 样式，然后再把顶部引入的 Button.css 给删除掉
+
+```tsx
+    <button
+      type="button"
+      className={['storybook-button', `storybook-button--${size}`, mode, 'bg-primary text-white p-2 rounded-md hover:bg-primary/90 active:bg-primary/78'].join(' ')}
+      style={{ backgroundColor }}
+      {...props}
+    >
+      {label}
+    </button>
+```
+
+-----
+
+### 7.2.3. 重新启动并验证
+
+现在，**彻底停止** (Ctrl+C) 此前正在运行的 Storybook 进程，然后重新启动：
+
+```bash
+pnpm storybook
+```
+
+再次访问 `http://localhost:6006/` 并查看 `src/stories` 中的 `Button` 示例。
+
+**你将会看到：**
+
+1.  控制台 **没有任何 `@/*` 路径解析错误**。
+2.  示例的 `Button` 组件 **已经拥有了 Tailwind 的基础样式**（不再是浏览器默认按钮）。
+    **即将到来的“新问题”：**
+
+你可能注意到了，按钮的 **颜色是错的**（他完全没有显示颜色，而不是我们在第五章定义的绿色 `primary`），并且 **亮/暗模式切换也不起作用**。
+
+这是 **完全预期** 的！
+
+我们 `7.2` 节的任务只是 **打通了构建管线**（路径别名和 Tailwind 加载）。
+
+我们尚未解决 **主题痛点**：Storybook 环境中 **没有** 我们的 `ThemeProvider`，因此所有 `var(--colors-...)` CSS 变量都是 **未定义** 的，Tailwind 只能回退到它的默认调色板。
+
+在 `7.3` 节中，我们将彻底解决这个问题。
+
+-----
+
+## 7.3. 核心：集成动态主题系统
+
+在 `7.2` 节，我们成功解决了 Storybook 的构建痛点，路径别名得以解析，Tailwind CSS 也被正确加载。然而，我们立刻遇到了一个新的、更深层次的问题：所有依赖我们 Design Tokens 的样式（颜色、阴影、圆角等）**依然是错误的**，并且亮/暗模式切换 **完全不起作用**。
+
+### 7.3.1. 探究根源：主题系统在隔离环境中的“失联”
+
+要理解这个现象，我们需要回顾第六章建立的动态主题系统的工作机制：
+
+1.  **状态源 (`settingStore`)**：存储当前的主题偏好（例如 `themeMode: 'dark'`）。
+2.  **驱动器 (`ThemeProvider`)**：订阅状态，并将状态实时地写入 `<html>` 元素的 `data-*` 属性（例如 `data-theme-mode="dark"`）和 `style` 属性。
+3.  **样式定义 (CSS 变量)**：由 `data-*` 属性激活，为 `--colors-...` 等变量赋予正确的值。
+4.  **样式消费 (Tailwind & Antd)**：Tailwind 类（`text-primary`）和 Ant Design 组件（通过 `AntdAdapter`）引用这些激活后的 CSS 变量。
+
+问题的症结在于 **第二步**。Storybook 将每个 "Story" 渲染在一个隔离的 `iframe` 中。默认情况下，这个 `iframe` 的环境中 **并不包含** 我们应用程序根部的 `ThemeProvider` 组件。
+
+**直接后果就是**：
+
+  * 没有 `ThemeProvider` 来写入 `data-*` 属性，导致我们在第五章定义的 CSS 变量 **从未被激活**。
+  * 当 Tailwind 或 Ant Design 尝试引用 `var(--colors-...)` 时，这些变量都是未定义的。
+  * 浏览器无法解析无效的 CSS 变量引用，导致所有依赖主题的样式回退到浏览器默认值或 Tailwind 的基础调色板。
+  * 亮/暗模式和主题色切换自然也无法工作，因为驱动它们的 `data-*` 属性从未被设置。
+
+因此，我们的核心任务是：找到一种机制，将我们的 `ThemeProvider` **注入** 到 Storybook 的渲染流程中，使其能够包裹并驱动每一个 Story 组件。
+
+### 7.3.2. 解决方案：运用 Storybook Decorators
+
+幸运的是，Storybook 提供了一个专门为此设计的、非常强大的特性：**Decorators (装饰器)**。
+
+Decorators 的核心概念非常直观：它们是在 `.storybook/preview.ts` 中定义的 **全局包装器组件**。
+
+当 Storybook 准备渲染任何一个 "Story" 时（比如 `Button` 组件的某个变体），它会按照 `preview.ts` 中 `decorators` 数组定义的顺序，用这些装饰器组件 **从内到外** 地包裹住这个 Story，形成一个嵌套结构，然后才将最终结果渲染到 `iframe` 中。
+
+例如，如果我们定义一个装饰器 `(Story) => <MyWrapper><Story /></MyWrapper>`，那么 Storybook 实际渲染的就是 `<MyWrapper><YourStoryComponent /></MyWrapper>`。
+
+这正是我们所需要的机制。我们可以创建一个 Decorator，它的唯一职责就是渲染我们的 `ThemeProvider`，并将 Story 组件作为其 `children` 传递进去。
+
+### 7.3.3. 编码实现：构建 `withTheme` 装饰器
+
+我们将创建一个名为 `withTheme` 的 React 函数组件，它将充当我们的全局主题装饰器。
+
+**第一步：创建装饰器文件**
+
+作为主题系统的一部分，我们将这个装饰器放在 `src/theme/` 目录下，与 `ThemeProvider` 等其他主题相关文件保持在一起，这样更符合项目的模块化组织原则。
+
+**文件路径**: `src/theme/withTheme.tsx`
+
+```tsx
+// 3. 导入 Storybook 官方提供的 Decorator 类型定义
+import type { Decorator } from "@storybook/react-vite";
+// 2. 导入 AntdAdapter (ThemeProvider 依赖它来适配 Ant Design)
+import { AntdAdapter } from "./adapter/antd.adapter";
+// 1. 导入我们在第六章创建的 ThemeProvider
+import { ThemeProvider } from "./theme-provider";
+
 /**
- * 定义主题模式的枚举
- * 'light' 和 'dark' 将作为 data-theme-mode 属性的值
+ * Storybook Decorator: 用于全局包裹所有 Stories
+ *
+ * 核心职责:
+ * 1. 渲染应用级的 ThemeProvider。
+ * 2. 传入 AntdAdapter，确保 Ant Design 组件也能接收主题。
+ * 3. 渲染由 Storybook 传入的实际 Story 组件 (<Story />)。
  */
-export enum ThemeMode {
-  Light = "light",
-  Dark = "dark",
-}
-
-/**
- * 定义预设主题色的枚举
- * 'default', 'cyan' 等将作为 data-color-palette 属性的值
- */
-export enum ThemeColorPresets {
-  Default = "default",
-  Cyan = "cyan",
-  Purple = "purple",
-  Blue = "blue",
-  Orange = "orange",
-  Red = "red",
-}
-
-/**
- * 定义将要附加到 HTML 根元素上的 data 属性名称的常量
- * 这样做可以避免在代码中硬编码字符串，减少拼写错误
- */
-export enum HtmlDataAttribute {
-  ColorPalette = "data-color-palette",
-  ThemeMode = "data-theme-mode",
-}
-```
-现在，我们的项目中有了类型安全的、可复用的主题状态常量。
-
-### 5.3.2. 定义“主题契约” (`createThemeContract`)
-
-在直接赋予 CSS 变量具体值之前，Vanilla Extract 推荐我们先定义一个 **“主题契约 (Theme Contract)”**。
-
-“契约”就像一个 TypeScript 的 `interface`，它只定义了变量的 **“形状”或“名称结构”**，而不关心它们的具体值。这带来了 **解耦**、**类型安全** 和 **一致性** 三大好处。
-
-**API 语法深度解析: `createThemeContract`**
-
-```typescript
-createThemeContract(contract: Object): ThemeContract;
-```
-*   **`contract` (参数)**:
-    *   **类型**: `Object`
-    *   **作用**: 这是一个描述你的主题“形状”的 JavaScript 对象。对象的 `key` 将被用作生成 CSS 变量名称的一部分，而 `value` 通常是 `null` 或一个字符串占位符。**这个对象的结构，就是你未来所有主题必须遵守的结构**。
-*   **返回值**:
-    *   **类型**: `ThemeContract` (这是一个与输入对象结构完全相同，但所有叶子节点的值都变成了 CSS 变量引用字符串的对象
-    *   例如：`var(--colors-palette-primary-default__1k2j3h)`)
-    *   **作用**: 这个返回的对象是类型安全的，你可以在代码中直接引用它的属性（如 `themeVars.colors.primary.default`），Vanilla Extract 会确保你引用的是一个有效的、唯一的 CSS 变量。
-
-**文件路径**: `src/theme/theme.css.ts` (开始编写)
-```typescript
-import { createThemeContract } from "@vanilla-extract/css";
-// 导入我们创建的颜色通道工具函数
-import { addChannelStructure } from "@/utils/theme";
-// 导入我们在 type.ts 中定义的 Tokens 骨架
-import { themeTokens } from "./type";
-
-// 使用 createThemeContract 创建主题契约
-// 传入 themeTokens 骨架，并确保颜色部分包含 Channel 变量
-export const themeVars = createThemeContract({
-  ...themeTokens, // 包含 typography, spacing, shadows 等所有骨架
-
-  // 特别处理 colors，为每个颜色值添加 { value, channel } 结构
-  // 注意：这里使用 addChannelStructure 而不是 addColorChannels
-  // 因为契约中的值都是 null，需要特殊处理
-  colors: addChannelStructure(themeTokens.colors),
-});
-```
-
-{% note success %}
-**类型安全提升**: 通过使用泛型函数 `addChannelStructure<T>`，TypeScript 能够自动推断返回类型，我们不再需要使用 `as ColorTokensWithChannel` 或 `as any` 进行类型断言。这让代码更加类型安全且易于维护。
-{% endnote %}
-
-### 5.3.3. 实现亮/暗模式 (`createGlobalTheme`)
-
-我们已经有了契约 (`themeVars`)。现在，我们需要为契约中的每个变量赋予具体的值，并且要能根据亮色和暗色模式提供不同的值。
-
-**API 语法深度解析: `createGlobalTheme`**
-
-```typescript
-createGlobalTheme(selector: string, contract: ThemeContract, tokens: Object): void;
-```
-*   **`selector` (参数 1)**:
-    *   **类型**: `string`
-    *   **作用**: 一个标准的 CSS 选择器。Vanilla Extract 将在这个选择器下生成所有的 CSS 变量。例如，`':root'` 或 `'.light-theme'`。
-*   **`contract` (参数 2)**:
-    *   **类型**: `ThemeContract`
-    *   **作用**: 我们在上一步通过 `createThemeContract` 创建的 **主题契约对象** (`themeVars`)。`createGlobalTheme` 会遍历这个契约，以确定要生成哪些 CSS 变量。
-*   **`tokens` (参数 3)**:
-    *   **类型**: `Object`
-    *   **作用**: 一个包含了 **具体设计令牌值** 的对象。这个对象的结构 **必须** 与 `contract` 参数的结构完全匹配。函数会从这个对象中查找每个变量对应的具体值。
-
-**代码实现**
-
-**第一步：准备数据获取函数**
-
-我们需要一个辅助函数，来动态地提供 `createGlobalTheme` 所需的第三个参数 `tokens`。
-**文件路径**: `src/theme/theme.css.ts` (追加)
-
-```typescript
-import { createGlobalTheme } from '@vanilla-extract/css';
-// 导入颜色通道工具函数（注意：这里使用 addColorChannels 而非 addChannelStructure）
-import { addColorChannels } from '@/utils/theme';
-// 导入我们 tokens/ 目录下的具体值
-import { baseThemeTokens } from './tokens/base';
-import { darkColorTokens, lightColorTokens } from './tokens/color';
-import { darkShadowTokens, lightShadowTokens } from './tokens/shadow';
-import { typographyTokens } from './tokens/typography';
-// 导入我们刚刚创建的枚举
-import { ThemeMode, HtmlDataAttribute } from './types/enum';
-
-/**
- * @description 根据亮/暗模式，获取一个包含了所有具体设计令牌值的完整对象
- * @param mode - 主题模式 ('light' 或 'dark')
- * @returns 一个与 themeVars 契约结构完全匹配，但填充了具体值的对象
- */
-const getThemeTokens = (mode: ThemeMode) => {
-  // 步骤 1: 根据传入的 mode，选择对应的颜色和阴影令牌集
-  const colorModeTokens = mode === ThemeMode.Light ? lightColorTokens : darkColorTokens;
-  const shadowModeTokens = mode === ThemeMode.Light ? lightShadowTokens : darkShadowTokens;
-
-  // 步骤 2: 组合所有令牌到一个对象中
-  // 这个对象的结构必须与我们之前定义的 themeVars 契约完全一致
-  return {
-    // 尤其重要的是，对颜色令牌集调用 addColorChannels
-    // 这样返回的对象中才包含了我们需要的 'channel' 属性
-    colors: addColorChannels(colorModeTokens),
-    typography: typographyTokens,
-    shadows: shadowModeTokens,
-    ...baseThemeTokens, // 使用展开运算符合并 spacing, borderRadius, screens 等
-  };
+export const withTheme: Decorator = (Story) => {
+	return (
+		// 使用我们在第六章构建的 ThemeProvider 进行包裹
+		// 并传入 AntdAdapter 以确保 Ant Design 组件的主题同步
+		<ThemeProvider adapters={[AntdAdapter]}>
+			{/* 渲染实际的 Story 组件 */}
+			<Story />
+		</ThemeProvider>
+	);
 };
 ```
 
-{% note info %}
-**关键区别**: 
-- 在 `createThemeContract` 中使用 `addChannelStructure`（处理 null 值）
-- 在 `getThemeTokens` 中使用 `addColorChannels`（处理实际颜色值）
-{% endnote %}
+**代码深度解析**：
 
-**第二步：使用 `createGlobalTheme` 生成亮/暗模式变量**
-**文件路径**: `src/theme/theme.css.ts` (追加)
-```typescript
-for (const themeMode of Object.values(ThemeMode)) {
-  createGlobalTheme(
-    `:root[${HtmlDataAttribute.ThemeMode}=${themeMode}]`,
-    themeVars,
-    getThemeTokens(themeMode),
-  );
-}
-```
+  * `Decorator` 类型来自于 `@storybook/react-vite`，它帮助我们确保 `withTheme` 函数的签名符合 Storybook 的要求。
+  * `Story` 参数是 Storybook 运行时注入的，它是一个代表了当前要渲染 Story（例如 `Button` 组件的 `Primary` 状态）的函数组件。
+  * 我们直接调用 `<Story />`，并将它置于 `<ThemeProvider adapters={[AntdAdapter]}>` 的内部。这确保了无论渲染哪个 Story，它都会被我们的主题系统所包裹。
+  * 由于文件位于 `src/` 目录内，得益于我们的 `tsconfig.json` 配置（`"jsx": "react-jsx"`），这里不需要显式导入 React 即可使用 JSX 语法。
 
-{% note success %}
-**类型安全**: 得益于我们使用泛型函数的设计，这里不再需要 `as any` 类型断言。TypeScript 能够正确推断类型，确保编译时的类型安全。
-{% endnote %}
+### 7.3.4. 全局应用：注册 `withTheme` 装饰器
 
-### 5.3.4. 实现动态主题色
+最后一步，我们需要在 Storybook 的全局"画布"配置文件 `.storybook/preview.ts` 中，告诉 Storybook 使用我们刚刚创建的 `withTheme` 装饰器。
 
-我们的主题系统现在可以切换亮/暗模式了。最后一步，是实现允许用户切换应用的主要“品牌色”（例如，从默认的绿色切换到蓝色、紫色等）。
-
-我们希望高效地实现这一点。当用户选择“蓝色”时，我们不希望重新定义全部 200 多个 CSS 变量，而只想精准地 **覆盖** 掉少数几个与 `primary` 颜色相关的变量。
-
-**前置准备：定义预设主题色**
-
-要实现此功能，我们首先需要在代码中定义好每一套预设主题色的具体颜色值。这是上一版中缺失的关键代码。我们需要回到 `color.ts` 文件来补充它。
-
-**文件路径**: `src/theme/tokens/color.ts` (补充 `presetsColors` 并更新 `paletteColors`)
-
-{% note warning %}
-**重要**: `presetsColors` 应该定义在 `paletteColors` **之前**，因为 `paletteColors` 需要引用它。
-{% endnote %}
+**文件路径**: `.storybook/preview.ts` (修改 `decorators` 数组)
 
 ```typescript
-import { rgbAlpha } from '@/utils/theme';
-import { ThemeColorPresets } from '../types/enum'; // 注意路径：../types/enum
+import '../src/index.css'; // 保持 CSS 导入
+import type { Preview } from "@storybook/react";
+// 1. 导入我们创建的 withTheme 装饰器
+import { withTheme } from '../src/theme/withTheme';
 
-// 1. 首先，定义所有预设主题色的梯度色板
-export const presetsColors = {
-  [ThemeColorPresets.Default]: {
-    lighter: "#C8FAD6",
-    light: "#5BE49B",
-    default: "#00A76F",
-    dark: "#007867",
-    darker: "#004B50",
-  },
-  [ThemeColorPresets.Cyan]: {
-    lighter: "#CCF4FE",
-    light: "#68CDF9",
-    default: "#078DEE",
-    dark: "#0351AB",
-    darker: "#012972",
-  },
-  [ThemeColorPresets.Purple]: {
-    lighter: "#E8DAFF",
-    light: "#B18AFF",
-    default: "#7635dc",
-    dark: "#49199c",
-    darker: "#290966",
-  },
-  [ThemeColorPresets.Blue]: {
-    lighter: "#D1E9FC",
-    light: "#76B0F1",
-    default: "#2065D1",
-    dark: "#103996",
-    darker: "#061B64",
-  },
-  [ThemeColorPresets.Orange]: {
-    lighter: "#FEF4D4",
-    light: "#FED680",
-    default: "#fda92d",
-    dark: "#b66800",
-    darker: "#793900",
-  },
-  [ThemeColorPresets.Red]: {
-    lighter: "#FFE4DE",
-    light: "#FF8676",
-    default: "#FF5630",
-    dark: "#B71D18",
-    darker: "#7A0916",
-  },
+const preview: Preview = {
+  // 2. [关键] 将 withTheme 添加到 decorators 数组中
+  // Storybook 会按照数组顺序应用装饰器（如果有多个）
+  decorators: [
+    withTheme,
+    // 如果未来有其他全局装饰器（例如路由模拟器），可以继续添加
+  ],
 };
 
-// 2. 然后，更新 paletteColors 的定义，使其 primary 字段引用我们刚刚创建的预设
-export const paletteColors = {
-  primary: presetsColors[ThemeColorPresets.Default], // 默认使用 Default (绿色) 预设
-  success: {
-    lighter: "#D8FBDE",
-    light: "#86E8AB",
-    default: "#36B37E",
-    dark: "#1B806A",
-    darker: "#0A5554",
-  },
-  // ... 其他语义化颜色保持不变
-  gray: grayColors,
-};
-
-// ... color.ts 中其余的代码 (commonColors, actionColors 等) 保持不变
-```
-现在，我们的代码库中有了切换主题所需的所有颜色数据。
-
-***
-
-**API 语法深度解析: `globalStyle` 与 `assignVars`**
-
-为了实现精准的变量 **覆盖**，我们需要组合使用两个新的 API。
-
-**API 语法: `globalStyle`**
-
-```typescript
-globalStyle(selector: string, styleRule: StyleRule): void;
+export default preview;
 ```
 
-- **`selector` (参数 1)**:
+-----
 
-**类型**: `string`
-**作用**: 一个标准的 CSS 选择器。`globalStyle` 会为这个选择器创建一个 CSS 规则块。例如：`':root[data-color-palette="cyan"]'`。
+### 7.3.5. 最终验证
 
-- **`styleRule` (参数 2)**:
+现在，**彻底停止** (Ctrl+C) Storybook 进程，然后 **重新启动**：
 
-**类型**: `StyleRule` (一个样式规则对象)
-**作用**: 描述这个规则块内的 CSS。它可以包含标准的 CSS 属性，如 `{ color: 'red' }`。但对我们而言，它有一个 **特殊的、由 Vanilla Extract 提供的属性**：
-**`vars`**: 这个 `vars` 属性专门用于 **覆盖** 由 `createGlobalTheme` 创建的 CSS 变量。它的值必须由 `assignVars` 辅助函数来生成。
-
-**API 语法: `assignVars`**
-
-```typescript
-assignVars(contract: ThemeContract | ThemeVars, tokens: Tokens): { vars: { [key: string]: string } };
+```bash
+pnpm storybook
 ```
 
-- **`contract` (参数 1)**:
+再次访问 `http://localhost:6006/` 并查看 `src/stories` 中的 `Button` 示例。
 
-**类型**: `ThemeContract` 或 `ThemeVars` (通常是 **契约的一个子集**)
-**作用**: 指定你想要覆盖的 **变量范围**。这是此 API 最强大的地方。我们将传入 `themeVars.colors.palette.primary`，精准地告诉它我们 **只** 想修改主品牌色相关的变量。
+**这一次，效果应该完全不同了：**
 
-- **`tokens` (参数 2)**:
-
-**类型**: `Object` (一个包含新值的对象)
-**作用**: 提供新的变量值。这个对象的结构 **必须** 与传入的 `contract` 子集的结构完全匹配。
-
-- **返回值**:
-
-**类型**: `{ vars: { [cssVarName: string]: string } }`
-**作用**: `assignVars` 不直接应用样式。它是一个类型安全的辅助函数，其唯一的职责就是返回一个格式完美的对象，该对象可以被直接赋值给 `globalStyle` 的 `vars` 属性。
-
-**总结**：`assignVars` 负责 **生成** 类型安全的覆盖指令，而 `globalStyle` 负责将这些指令 **应用** 到指定的 CSS 选择器上。
-
-**代码实现**
-
-现在，我们可以胸有成竹地编写实现动态主题色的代码了。
-
-**文件路径**: `src/theme/theme.css.ts` (追加)
-
-```typescript
-import { globalStyle, assignVars } from '@vanilla-extract/css';
-// 导入我们刚刚补充的预设颜色值和枚举
-import { presetsColors } from './tokens/color';
-import { HtmlDataAttribute, ThemeColorPresets } from "./types/enum";
-
-// --- 实现动态主题色切换 ---
-
-// 循环处理我们定义的所有预设颜色 (Default, Cyan, Purple...)
-for (const preset of Object.values(ThemeColorPresets)) {
-  // 1. 定义目标选择器。例如，当 preset 为 'Cyan' 时，
-  //    选择器变为 ':root[data-color-palette="cyan"]'
-  const selector = `:root[${HtmlDataAttribute.ColorPalette}='${preset}']`;
-
-  // 2. 获取当前循环到的预设颜色所对应的具体色值对象
-  //    例如 { lighter: "#CCF4FE", light: "#68CDF9", ... }
-  const presetColorValues = presetsColors[preset];
-
-  // 3. 使用 globalStyle 为该选择器创建一个 CSS 规则块
-  globalStyle(selector, {
-    // 4. 在规则块内部，使用 assignVars 来生成变量覆盖语句
-    vars: assignVars(
-      // 参数 1: 要覆盖的契约范围。我们精准地只覆盖主色相关的变量。
-      themeVars.colors.palette.primary,
-
-      // 参数 2: 提供的新值。
-      // 我们传入新的色值对象，并确保它的颜色通道也被计算。
-      addColorChannels(presetColorValues),
-    ),
-  });
-}
-```
-
-{% note success %}
-**完全类型安全**: 整个实现过程中，我们没有使用任何 `as any` 类型断言。这得益于：
-1. 使用泛型函数 `addChannelStructure<T>` 和 `addColorChannels<T>`
-2. 正确区分契约定义和值填充的处理方式
-3. 支持所有颜色格式（#hex, rgb, rgba, hsl 等）
-
-这种设计让代码更加健壮、可维护，并且能在编译时捕获类型错误。
-{% endnote %}
-
-### 5.3.5. 验证最终系统
-
-现在，`src/theme/theme.css.ts` 文件已经完整且正确。是时候验证它的编译结果了。
-
-**第一步：重启开发服务器**
-确保你的 Vite 开发服务器正在运行 (`pnpm dev`)。由于我们修改了 `.css.ts` 文件，Vite 的热更新 (HMR) 会自动重新编译它。
-
-**第二步：检查浏览器开发者工具**
-打开浏览器，访问你的应用页面，然后打开开发者工具（按 `F12`）。
-
-1.  **切换到“Elements” (或“元素”) 面板。**
-2.  **选中 `<html>` 根元素。**
-3.  **在右侧的“Styles” (或“样式”) 面板中，向下滚动，找到以 `--` 开头的 CSS 变量定义。**
-
-你应该能看到类似以下的景象：
-
-**检查要点**：
-
-  * **变量名称**：确认看到了大量由 Vanilla Extract 自动生成的、带有唯一 Hash 后缀的 CSS 变量名 (如 `--colors-text-primary__b4c5d6`)。
-  * **亮/暗模式作用域**：确认这些变量被正确地包裹在 `:root[data-theme-mode="light"]` (或 `dark`) 的选择器下。你可以手动在 `<html>` 元素上添加 `data-theme-mode="dark"` 属性，观察变量值是否会切换。
-  * **主题色作用域（可选）**：如果你手动在 `<html>` 元素上添加 `data-color-palette="cyan"` 属性，你应该能观察到 `--colors-palette-primary-...` 相关变量的值被 cyan 颜色的覆盖规则所改变。
-  * **变量值**：确认变量的值与我们在 `tokens/` 目录下定义的具体值一致。
-
-如果以上都符合预期，那么恭喜你！Vanilla Extract 已经成功将我们的 TypeScript Design Tokens 编译成了浏览器可用的、支持亮/暗模式和动态主题色的 CSS 变量系统。
+1.  **颜色正确！** 示例 `Button` (如果是 primary 类型) 现在应该显示我们在第五章定义的 **绿色**（对应 `colors.palette.primary.default`）。
+2.  **Tailwind 主题色生效！** 如果你在 Story 中使用了 `text-primary` 或 `bg-primary`，它们现在也会显示正确的绿色。
+3.  **Ant Design 主题色也生效！** 如果 Story 中有 Antd 的 `Button type="primary"`，它的颜色也应该是绿色，并且与 Tailwind 的 `primary` **完全一致**。
+4.  **检查 `iframe` 的 `<html>` 元素**：在浏览器的开发者工具中，切换到 Storybook 的 `iframe`，检查其 `<html>` 元素。你会发现它已经被添加了 `data-theme-mode="light"` 和 `data-color-palette="default"` 属性，并且 `style` 属性中包含了正确的 `font-size`！
 
 {% note success simple %}
-**阶段性成果**：我们完成了 `Prorise-Admin` 主题系统的核心引擎构建。通过深入学习 Vanilla Extract 的 `createThemeContract`, `createGlobalTheme`, `globalStyle`, `assignVars` 等核心 API，我们成功地将 TypeScript 中定义的 Design Tokens 编译为了**类型安全、结构化、支持多主题**的原生 CSS 变量。我们还重点掌握了 `addColorChannels` 工具函数在实现动态透明度颜色中的关键作用。主题系统的“地基”已经牢固。
+**阶段性成果**：我们成功地将 `Prorise-Admin` 的 **核心动态主题系统** 注入到了 Storybook 的隔离环境中。通过创建一个简单的 `withTheme` **装饰器 (Decorator)**，并将其注册到 `.storybook/preview.ts`，我们确保了每一个 Story 都被 `ThemeProvider` 和 `AntdAdapter` 正确包裹。现在，所有组件在 Storybook 中的视觉表现将与它们在主应用中 **完全一致**。CDD 环境的核心基石已经奠定。
+{% endnote %}
+
+
+-----
+
+## 7.4. 增强：添加主题切换插件
+
+`7.3` 节成功地将我们的 `ThemeProvider` 注入了 Storybook，使得组件能够以 **默认主题**（通常是亮色、默认颜色预设）正确渲染。
+
+然而，我们构建的是一个 **动态** 主题系统。开发者需要在 Storybook 环境中方便地 **切换** 亮/暗模式和不同的颜色预设，以确保组件在所有主题下的表现都符合预期。目前，Storybook 还没有提供这样的交互能力。
+我们的目标是：在 Storybook 的工具栏（Toolbar）中添加控件（如下拉菜单或按钮），允许用户 **实时切换** 亮/暗模式和主题颜色预设，并立即看到组件视觉效果的变化。
+
+### 7.4.1. 识别机制：利用 `@storybook/addon-themes`
+
+Storybook 通过 Addon 机制来扩展其功能。
+
+```bash
+pnpm add -D @storybook/addon-themes
+```
+
+我们可以在 `.storybook/main.ts` 文件中确认 `addon-themes` 是否已被注册：
+
+**文件路径**: `.storybook/main.ts` (检查 `addons` 数组)
+
+```typescript
+// ... imports ...
+
+const config: StorybookConfig = {
+  // ... stories, framework, docs, viteFinal ...
+  addons: [
+    // ... other addons like essentials, interactions, a11y ...
+    '@storybook/addon-themes', // <--- 确认此行存在
+  ],
+};
+export default config;
+```
+
+`@storybook/addon-themes` 的核心作用是提供 UI 控件，并根据用户的选择，**修改渲染环境**（通常是 `iframe` 的 `<html>` 元素）的 `class` 或 `data-*` 属性。
+
+这与我们在第六章设计的 `ThemeProvider` 机制 **完美契合**！我们的 CSS 变量正是由 `<html>` 元素上的 `data-theme-mode` 和 `data-color-palette` 属性激活的。
+
+因此，我们只需要 **配置** `@storybook/addon-themes`，告诉它：
+
+1.  有哪些主题可供选择（例如 "Light", "Dark"）。
+2.  当用户选择某个主题时，应该在哪（`<html>`）设置哪个属性（`data-theme-mode`）为什么值（`'light'` 或 `'dark'`）。
+
+### 7.4.2. 配置 Addon 驱动 `data-*` 属性 (`preview.tsx`)
+
+`@storybook/addon-themes` 的最新版本提供了 `withThemeByDataAttribute` 装饰器，专门用于通过 `data-*` 属性控制主题。这比旧版本的配置方式更简单、更直接。
+
+我们将分别为 "亮/暗模式切换" 和 "颜色预设切换" 添加配置。
+
+**文件路径**: `.storybook/preview.tsx` (修改)
+
+```typescript
+import type { Preview } from "@storybook/react-vite";
+import "../src/index.css";
+import "../src/theme/theme.css";
+import { withThemeByDataAttribute } from "@storybook/addon-themes";
+import {
+	HtmlDataAttribute,
+	ThemeColorPresets,
+	ThemeMode,
+} from "../src/theme/types/enum";
+
+const preview: Preview = {
+  // ...前面内容保持不变
+	decorators: [
+		// // 亮/暗模式切换 - 通过 data-theme-mode 属性控制
+    // 由于插件顶栏不适配两种模式的切换，一般我们要测试亮暗色就取消这个注释即可
+		// withThemeByDataAttribute({
+		// 	themes: {
+		// 		light: ThemeMode.Light,
+		// 		dark: ThemeMode.Dark,
+		// 	},
+		// 	defaultTheme: ThemeMode.Light,
+		// 	attributeName: HtmlDataAttribute.ThemeMode,
+		// }),
+		// 颜色预设切换 - 通过 data-color-palette 属性控制
+		withThemeByDataAttribute({
+			themes: {
+				default: ThemeColorPresets.Default,
+				cyan: ThemeColorPresets.Cyan,
+				purple: ThemeColorPresets.Purple,
+				blue: ThemeColorPresets.Blue,
+				orange: ThemeColorPresets.Orange,
+				red: ThemeColorPresets.Red,
+			},
+			defaultTheme: ThemeColorPresets.Default,
+			attributeName: HtmlDataAttribute.ColorPalette,
+		}),
+		// 保留原有的 ThemeProvider 装饰器
+		withTheme,
+	],
+};
+
+export default preview;
+
+```
+
+### 7.4.3. 验证主题切换功能
+
+现在，**重新启动** Storybook：
+
+```bash
+pnpm storybook
+```
+
+**观察 Storybook 界面**：
+
+![image-20251025172457300](https://prorise-blog.oss-cn-guangzhou.aliyuncs.com/cover/image-20251025172457300.png)
+
+**✨ 成功！我们使用最新的 `@storybook/addon-themes` API，实现了完整的主题切换功能！**
+
+
+
+## 7.5. 本章小结 & 代码入库
+
+在本章中，我们为 `Prorise-Admin` 成功搭建了 **组件驱动开发 (CDD)** 的核心基础设施——**Storybook 9**。这不仅仅是一次简单的安装，我们深入解决了将其无缝集成到我们现有技术栈中的关键挑战。
+
+**回顾本章，我们取得了以下核心进展：**
+
+1.  **奠定 CDD 基石 (`7.1`)**：
+
+      * 我们理解了 CDD 的核心价值，并选择了 Storybook 作为实现这一理念的工具。
+      * 我们使用 `pnpm dlx storybook@latest init` 命令成功初始化了 Storybook 环境，适配了 Vite + React + TS 技术栈，并了解了核心配置文件 (`main.ts`, `preview.ts`) 的作用。
+
+2.  **打通构建管线 (`7.2`)**：
+
+      * 我们直面了 Storybook 独立 Vite 实例带来的集成痛点。
+      * 通过引入 `vite-tsconfig-paths` 插件并在 `main.ts` 中配置 `viteFinal` 钩子，我们成功解决了 **Vite 路径别名 (`@/*`)** 的解析问题。
+      * 通过在 `preview.ts` 中全局导入 `src/index.css`，我们确保了 **Tailwind CSS v4** 的配置（`@config`）和变体（`@variant dark`）能够被正确加载和应用。
+
+3.  **注入动态主题 (`7.3`)**：
+
+      * 这是本章的 **核心突破**。我们识别到 Storybook 隔离环境缺少 `ThemeProvider` 导致样式失效的问题。
+      * 我们运用 Storybook 的 **Decorators** 机制，创建了 `withTheme` 装饰器，巧妙地将我们的 `ThemeProvider` (及其依赖的 `AntdAdapter`) 注入到每一个 Story 的渲染流程中。
+      * 这确保了所有组件在 Storybook 中都能获得与主应用 **完全一致** 的默认主题视觉表现。
+
+4.  **激活主题切换 (`7.4`)**：
+
+      * 我们利用 `@storybook/addon-themes` 插件，在 `preview.ts` 中进行了配置。
+      * 通过将插件的目标指向 `<html>` 元素的 `data-theme-mode` 属性，我们成功地在 Storybook 工具栏中添加了 **亮/暗模式** 的切换控件，实现了主题的动态响应。
+
+至此，`Prorise-Admin` 的 Storybook 环境已经 **基本就绪**。它不仅能够正确构建和渲染我们的组件，更重要的是，它 **完全集成了我们复杂的动态主题系统**，为后续高质量、可独立开发的 UI 组件（`src/ui`, `src/components`）打下了坚实的基础。
+
+-----
+
+**代码入库：CDD 环境就绪**
+
+我们已经完成了一个重要的基础设施搭建。现在，是时候将我们的 Storybook 环境配置安全地提交到 Git 仓库了。
+
+**第一步：检查代码状态**
+
+使用 `git status` 查看变更。
+
+```bash
+git status
+```
+
+你会看到大量的新增文件和修改：
+
+  * **依赖**：`package.json` / `pnpm-lock.yaml` (新增了大量 `@storybook/*` 相关的开发依赖，以及 `vite-tsconfig-paths`)。
+  * **配置**：新增了 `.storybook/` 目录及其下的 `main.ts`, `preview.ts`, `withTheme.tsx` 文件。
+  * **示例**：新增了 `src/stories/` 目录及其下的示例文件。
+  * **脚本**：`package.json` 中新增了 `storybook` 和 `build-storybook` 脚本。
+
+**第二步：暂存所有变更**
+
+将所有新文件和修改添加到暂存区。
+
+```bash
+git add .
+```
+
+**第三步：执行提交**
+
+我们编写一条符合“约定式提交”规范的 Commit Message。`feat` 是合适的类型，`storybook` 或 `dev:storybook` 是合适的 `scope`。
+
+```bash
+git commit -m "feat(dev:storybook): setup storybook 9 with vite, tailwind, and theme provider integration"
+```
+
+*这条消息清晰地表明我们完成了 Storybook 的搭建，并解决了与 Vite、Tailwind 和我们自定义主题的集成问题。*
+
+{% note info simple %}
+**一个可工作的起点**: 这次提交的价值在于，它提供了一个 **立即可用的 Storybook 环境**。团队中的任何成员现在都可以 `git pull` 并运行 `pnpm storybook`，开始在隔离环境中进行组件开发和可视化测试了。
 {% endnote %}
 

@@ -34,6 +34,6 @@
       "@/*": ["src/*"] // 路径映射，@/* 映射到 src/* 目录
     }
   },
-  "include": ["src", "auto-imports.d.ts"], // 包含src目录和自动导入类型声明文件
+  "include": ["src", ".storybook", "auto-imports.d.ts"], // 包含src目录、storybook配置和自动导入类型声明文件
   "references": [{ "path": "./tsconfig.node.json" }] // 项目引用，引用Node.js相关的TypeScript配置
 }
