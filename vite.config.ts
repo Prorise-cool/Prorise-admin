@@ -11,7 +11,10 @@ export default defineConfig({
     react(),
     tsconfigPaths(),
     tailwindcss(),
-    vanillaExtractPlugin(),
+    // 这一行参数很重要，他会让Vanilla Extract 不要添加哈希后缀（如 __pl7sh5）
+    vanillaExtractPlugin({
+      identifiers: ({ debugId }) => `${debugId}`,
+    }),
     AutoImport({
       // 目标文件类型
       include: [

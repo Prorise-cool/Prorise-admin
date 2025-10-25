@@ -1,7 +1,22 @@
-/* 
-  v4 中禁用 Preflight 的方法：
-  分别导入 Tailwind 的各个层，跳过包含 Preflight 的完整导入
-*/
-@import "tailwindcss/theme";
-@import "tailwindcss/utilities";
+/* 依旧保留 tailwindcss 的完整导入 */
+@import "tailwindcss";
+/* pnpm add -D tw-animate-css */
+@import "tw-animate-css";
 
+/* --- 关键变更 1: 声明配置文件路径 --- */
+/* 
+  意图：Tailwind v4 不再自动寻找配置文件。
+  这行代码是必须的，它明确告诉 Tailwind 去哪里加载我们的 JS 配置。
+*/
+@config "../tailwind.config.ts";
+
+/* ... (@layer base 的覆盖可以暂时保持不变) ... */
+/* --- 关键变更 2: 定义暗黑模式变体 --- */
+/*
+  意图：这就是我们的“开关”。这行代码创建了一个名为 `dark` 的变体。
+  它的工作逻辑是：当一个元素能够匹配 `:is([data-theme-mode="dark"] *)` 这个选择器时
+  （即，当它的祖先元素，通常是 <html>，拥有 data-theme-mode="dark" 属性时），
+  所有以 `dark:` 为前缀的工具类就会被激活。
+  这完美地与我们 ThemeProvider 的行为对接。
+*/
+@variant dark (&:is([data-theme-mode="dark"] *));

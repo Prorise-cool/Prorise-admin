@@ -28,3 +28,7 @@ export enum HtmlDataAttribute {
   ColorPalette = "data-color-palette",
   ThemeMode = "data-theme-mode",
 }
+
+export enum StorageEnum {
+  Settings = "settings",
+}

@@ -1,13 +1,12 @@
+import type { ThemeMode } from "./types/enum";
 /**
  * UI 库适配器的 Props 类型定义
- * 这是为未来将我们的主题应用到 Antd 上所做的准备
  */
 export type UILibraryAdapterProps = {
-  mode: "light" | "dark"; // 暂时使用字面量类型，后续会定义为枚举
+  mode: ThemeMode; // 定义为枚举
   children: React.ReactNode;
 };
 export type UILibraryAdapter = React.FC<UILibraryAdapterProps>;
-
 /**
  * ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== =
  * 颜色契约 (Color Contract)
