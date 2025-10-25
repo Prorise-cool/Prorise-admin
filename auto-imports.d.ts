@@ -7,6 +7,7 @@
 export {};
 declare global {
   const Button: typeof import("antd").Button;
+  const Divider: typeof import("antd").Divider;
   const Typography: typeof import("antd").Typography;
   const createRef: typeof import("react").createRef;
   const forwardRef: typeof import("react").forwardRef;

@@ -1,17 +1,7 @@
 /* 
   v4 中禁用 Preflight 的方法：
-  不使用 @import "tailwindcss"（它包含 Preflight）
-  而是分别导入 Tailwind 的各个层
+  分别导入 Tailwind 的各个层，跳过包含 Preflight 的完整导入
 */
 @import "tailwindcss/theme";
 @import "tailwindcss/utilities";
 
-/* 使用 @theme 指令直接在 CSS 中定制和扩展主题 */
-@theme {
-  /* 定义我们的品牌主色 */
-  --color-brand: #00b96b;
-
-  /* 扩展其他设计令牌 */
-  --font-sans: "Inter", sans-serif;
-  --breakpoint-3xl: 1920px;
-}

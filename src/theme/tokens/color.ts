@@ -1,13 +1,12 @@
-import { rgbAlpha } from "@/utils/theme";
+import { rgbAlpha } from "@/theme/utils/themeUtils";
 import { ThemeColorPresets } from "../types/enum";
-
-// 基础的黑白色
+// 定义最基础的黑白色
 export const commonColors = {
   white: "#FFFFFF",
   black: "#09090B", // 使用略微柔和的黑色，而非纯 #000000
 };
 
-// 一套中性的灰色梯度，用于背景、边框、文本等
+// 定义一套中性的灰色梯度，用于背景、边框、文本等
 export const grayColors = {
   "100": "#F9FAFB",
   "200": "#F4F6F8",
@@ -67,7 +66,7 @@ export const presetsColors = {
 };
 
 /**
- * 我们推荐使用[Eva Color Design](https://colors.eva.design/)来快速选取这些值，遵守如下的数值即可：
+ * 我们推荐使用 [Eva Color Design](https://colors.eva.design/) 来快速选取这些值，遵守如下的数值即可：
  *  + lighter : 100
  *  + light : 300
  *  + main : 500

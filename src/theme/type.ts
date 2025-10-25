@@ -1,5 +1,6 @@
 /**
  * UI 库适配器的 Props 类型定义
+ * 这是为未来将我们的主题应用到 Antd 上所做的准备
  */
 export type UILibraryAdapterProps = {
   mode: "light" | "dark"; // 暂时使用字面量类型，后续会定义为枚举
@@ -8,68 +9,103 @@ export type UILibraryAdapterProps = {
 export type UILibraryAdapter = React.FC<UILibraryAdapterProps>;
 
 /**
- * 定义 Design Tokens 的基本结构骨架。
- * 我们使用 `null` 作为占位符，这对于下一章将要使用的
- * Vanilla Extract 的 `createThemeContract` API 是非常完美的输入。
+ * ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== =
+ * 颜色契约 (Color Contract)
+ * ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== =
+ * 我们为所有颜色令牌定义一个可复用的“契约形状”。
+ * - 'value': 将存储最终的颜色值 (e.g., "#FFFFFF" or "rgba(...)")
+ * - 'channel': 将存储该颜色的 RGB 通道值 (e.g., "255 255 255")
+ * * 这种结构是实现动态透明度（如 rgba(var(--color-channel) / 0.5)）的关键。
  */
-const palette = {
+const colorTokenContract = {
+  value: null,
+  channel: null,
+};
+
+/**
+ * 调色板 (Palette) 的契约结构
+ * 复用 colorTokenContract 来定义每种语义颜色的梯度
+ */
+export const palette = {
   primary: {
-    lighter: null,
-    light: null,
-    default: null,
-    dark: null,
-    darker: null,
+    lighter: colorTokenContract,
+    light: colorTokenContract,
+    default: colorTokenContract,
+    dark: colorTokenContract,
+    darker: colorTokenContract,
   },
   success: {
-    lighter: null,
-    light: null,
-    default: null,
-    dark: null,
-    darker: null,
+    lighter: colorTokenContract,
+    light: colorTokenContract,
+    default: colorTokenContract,
+    dark: colorTokenContract,
+    darker: colorTokenContract,
   },
   warning: {
-    lighter: null,
-    light: null,
-    default: null,
-    dark: null,
-    darker: null,
+    lighter: colorTokenContract,
+    light: colorTokenContract,
+    default: colorTokenContract,
+    dark: colorTokenContract,
+    darker: colorTokenContract,
   },
   error: {
-    lighter: null,
-    light: null,
-    default: null,
-    dark: null,
-    darker: null,
+    lighter: colorTokenContract,
+    light: colorTokenContract,
+    default: colorTokenContract,
+    dark: colorTokenContract,
+    darker: colorTokenContract,
   },
-  info: { lighter: null, light: null, default: null, dark: null, darker: null },
+  info: {
+    lighter: colorTokenContract,
+    light: colorTokenContract,
+    default: colorTokenContract,
+    dark: colorTokenContract,
+    darker: colorTokenContract,
+  },
   gray: {
-    "100": null,
-    "200": null,
-    "300": null,
-    "400": null,
-    "500": null,
-    "600": null,
-    "700": null,
-    "800": null,
-    "900": null,
+    "100": colorTokenContract,
+    "200": colorTokenContract,
+    "300": colorTokenContract,
+    "400": colorTokenContract,
+    "500": colorTokenContract,
+    "600": colorTokenContract,
+    "700": colorTokenContract,
+    "800": colorTokenContract,
+    "900": colorTokenContract,
   },
 };
 
+/**
+ * ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== =
+ * 完整的主题令牌契约 (Theme Tokens Contract)
+ * ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== ==== =
+ * 这是我们整个设计系统的“形状”定义。
+ */
 export const themeTokens = {
-  // 全局颜色集
   colors: {
     palette,
-    common: { white: null, black: null },
+    common: { white: colorTokenContract, black: colorTokenContract },
     action: {
-      hover: null,
-      selected: null,
-      focus: null,
-      disabled: null,
-      active: null,
+      hover: colorTokenContract,
+      selected: colorTokenContract,
+      focus: colorTokenContract,
+      disabled: colorTokenContract,
+      active: colorTokenContract,
     },
-    text: { primary: null, secondary: null, disabled: null },
-    background: { default: null, paper: null, neutral: null },
+    text: {
+      primary: colorTokenContract,
+      secondary: colorTokenContract,
+      disabled: colorTokenContract,
+    },
+    background: {
+      default: colorTokenContract,
+      paper: colorTokenContract,
+      neutral: colorTokenContract,
+    },
   },
+
+  // --- 非颜色令牌 (Non-Color Tokens) ---
+  // 这些令牌不需要 'channel' 结构，因此我们使用简单的 'null' 占位符。
   // 全局字体集
   typography: {
     fontFamily: { openSans: null, inter: null },
@@ -83,6 +119,7 @@ export const themeTokens = {
     },
     lineHeight: { none: null, tight: null, normal: null, relaxed: null },
   },
+
   // 全局间距集
   spacing: {
     0: null,
@@ -101,6 +138,7 @@ export const themeTokens = {
     24: null,
     32: null,
   },
+
   // 全局圆角集
   borderRadius: {
     none: null,
@@ -111,6 +149,7 @@ export const themeTokens = {
     xl: null,
     full: null,
   },
+
   // 全局阴影集
   shadows: {
     none: null,
@@ -131,8 +170,10 @@ export const themeTokens = {
     warning: null,
     error: null,
   },
+
   // 全局屏幕集
   screens: { xs: null, sm: null, md: null, lg: null, xl: null, "2xl": null },
+
   // 全局透明度集
   opacity: {
     0: null,
@@ -162,6 +203,7 @@ export const themeTokens = {
     disabled: null,
     disabledBackground: null,
   },
+
   // 全局层级集
   zIndex: {
     appBar: null,
@@ -173,3 +215,11 @@ export const themeTokens = {
     scrollbar: null,
   },
 };
+
+type ColorChannel = { value: string; channel: string };
+
+export type AddChannelToLeaf<T> = T extends string
+  ? ColorChannel // 字符串 → { value, channel }
+  : T extends object
+    ? { [K in keyof T]: AddChannelToLeaf<T[K]> } // 递归处理对象
+    : T;

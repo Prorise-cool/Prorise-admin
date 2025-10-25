@@ -4,7 +4,9 @@ import {
   createThemeContract,
   globalStyle,
 } from "@vanilla-extract/css";
-import { addChannelStructure, addColorChannels } from "@/utils/theme";
+// 导入【核心转换器】
+import { addColorChannels } from "@/theme/utils/themeUtils";
+// 导入【扁平的、具体的值】
 import { baseThemeTokens } from "./tokens/base";
 import {
   darkColorTokens,
@@ -13,8 +15,14 @@ import {
 } from "./tokens/color";
 import { darkShadowTokens, lightShadowTokens } from "./tokens/shadow";
 import { typographyTokens } from "./tokens/typography";
+// 导入【主题契约】
 import { themeTokens } from "./type";
+
+// 导入【枚举】
 import { HtmlDataAttribute, ThemeColorPresets, ThemeMode } from "./types/enum";
+
+// 使用 createThemeContract 创建【主题契约】
+export const themeVars = createThemeContract(themeTokens);
 
 /**
  * @description 根据亮/暗模式，获取一个包含了所有具体设计令牌值的完整对象
@@ -22,63 +30,62 @@ import { HtmlDataAttribute, ThemeColorPresets, ThemeMode } from "./types/enum";
  * @returns 一个与 themeVars 契约结构完全匹配，但填充了具体值的对象
  */
 const getThemeTokens = (mode: ThemeMode) => {
-  // 步骤 1: 根据传入的 mode，选择对应的颜色和阴影令牌集
+  // 步骤 1: 根据传入的 mode，选择对应的【扁平】颜色和阴影令牌集
   const colorModeTokens =
     mode === ThemeMode.Light ? lightColorTokens : darkColorTokens;
   const shadowModeTokens =
     mode === ThemeMode.Light ? lightShadowTokens : darkShadowTokens;
 
-  // 步骤 2: 组合所有令牌到一个对象中
-  // 这个对象的结构必须与我们之前定义的 themeVars 契约完全一致
   return {
-    // 尤其重要的是，对颜色令牌集调用 addColorChannels
-    // 这样返回的对象中才包含了我们需要的 'channel' 属性
+    // 步骤 2a:
+    // [关键点]：对【扁平】的颜色令牌集调用 addColorChannels！
+    // 这个函数会将其递归转换为 { value: "...", channel: "..." } 的
+    // 【契约形状】，这正是 createGlobalTheme 所需要的。
     colors: addColorChannels(colorModeTokens),
+    // 步骤 2b: 组合所有非颜色令牌
+    // 这些令牌的结构 (e.g., typography.fontSize.xs)
+    // 已经与契约 (themeVars) 匹配
     typography: typographyTokens,
     shadows: shadowModeTokens,
     ...baseThemeTokens, // 使用展开运算符合并 spacing, borderRadius, screens 等
   };
 };
 
-// 使用 createThemeContract 创建主题契约
-// 传入 themeTokens 骨架，并确保颜色部分包含 Channel 变量
-export const themeVars = createThemeContract({
-  ...themeTokens, // 包含 typography, spacing, shadows 等所有骨架
-
-  // 特别处理 colors，为每个颜色值添加 { value, channel } 结构
-  colors: addChannelStructure(themeTokens.colors),
-});
-
+// 循环遍历 ThemeMode 枚举 (light 和 dark)
 for (const themeMode of Object.values(ThemeMode)) {
+  // 为每种模式创建一个全局主题
   createGlobalTheme(
+    // CSS 选择器, e.g., : root [data-theme-mode = "light"]
     `:root[${HtmlDataAttribute.ThemeMode}=${themeMode}]`,
+
+    // 我们在 5.3.1 中创建的契约
     themeVars,
+
+    // 我们刚创建的辅助函数，用于获取该模式下的具体值
     getThemeTokens(themeMode),
   );
 }
 
-// --- 实现动态主题色切换 ---
-
-// 循环处理我们定义的所有预设颜色 (Default, Cyan, Purple...)
+// 循环遍历我们在 5.2.3 中定义的所有预设主题色 (default, cyan, purple...)
 for (const preset of Object.values(ThemeColorPresets)) {
-  // 1. 定义目标选择器。例如，当 preset 为 'Cyan' 时，
-  //    选择器变为 ': root [data-color-palette = "cyan"]'
-  const selector = `:root[${HtmlDataAttribute.ColorPalette}='${preset}']`;
+  // 为每个预设色创建一个全局样式规则
+  globalStyle(
+    // CSS 选择器, e.g., : root [data-color-palette = "cyan"]
+    `:root[${HtmlDataAttribute.ColorPalette}=${preset}]`,
+    {
+      // 关键：使用 'vars' 属性来覆盖变量
+      vars: assignVars(
+        // 参数 1: [契约子集]
+        // 我们告诉 assignVars，我们【只】想覆盖
+        // 'themeVars.colors.palette.primary' 范围内的变量
+        themeVars.colors.palette.primary,
 
-  // 2. 获取当前循环到的预设颜色所对应的具体色值对象
-  //    例如 { lighter: "#CCF4FE", light: "#68CDF9", ... }
-  const presetColorValues = presetsColors[preset];
-
-  // 3. 使用 globalStyle 为该选择器创建一个 CSS 规则块
-  globalStyle(selector, {
-    // 4. 在规则块内部，使用 assignVars 来生成变量覆盖语句
-    vars: assignVars(
-      // 参数 1: 要覆盖的契约范围。我们精准地只覆盖主色相关的变量。
-      themeVars.colors.palette.primary,
-
-      // 参数 2: 提供的新值。
-      // 我们传入新的色值对象，并确保它的颜色通道也被计算。
-      addColorChannels(presetColorValues),
-    ),
-  });
+        // 参数 2: [新的值]
+        // 我们从 presetsColors 中获取该预设的【扁平】颜色对象，
+        // 并再次使用 addColorChannels 转换器，
+        // 将其转换为 { value, channel } 的【契约形状】
+        { ...addColorChannels(presetsColors[preset]) },
+      ),
+    },
+  );
 }

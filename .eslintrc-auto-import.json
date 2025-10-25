@@ -1,7 +1,5 @@
 {
   "globals": {
-    "Button": true,
-    "Typography": true,
     "createRef": true,
     "forwardRef": true,
     "lazy": true,
