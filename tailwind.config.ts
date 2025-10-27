@@ -16,15 +16,42 @@ export default {
     // 映射需要扩展的 theme 属性
     extend: {
       colors: {
-        primary: createColorChannel("colors.palette.primary"),
+        // 语义化颜色
+        primary: {
+          ...createColorChannel("colors.palette.primary"),
+          foreground: "rgb(var(--colors-common-white-channel))",
+        },
+        destructive: {
+          ...createColorChannel("colors.palette.error"),
+          foreground: "rgb(var(--colors-common-white-channel))",
+        },
+        secondary: {
+          DEFAULT: "rgb(var(--colors-palette-primary-default-channel) / 0.1)",
+          foreground: "rgb(var(--colors-palette-primary-default-channel))",
+        },
+        accent: {
+          DEFAULT: "rgb(var(--colors-background-neutral-channel))",
+          foreground: "rgb(var(--colors-text-primary-channel))",
+        },
+
+        // 辅助颜色
         success: createColorChannel("colors.palette.success"),
         warning: createColorChannel("colors.palette.warning"),
         error: createColorChannel("colors.palette.error"),
         info: createColorChannel("colors.palette.info"),
         gray: createColorChannel("colors.palette.gray"),
-        text: createColorChannel("colors.text"),
-        bg: createColorChannel("colors.background"),
-        action: createColorChannel("colors.action"),
+
+        // 基础颜色
+        background: {
+          DEFAULT: "rgb(var(--colors-background-default-channel))",
+          paper: "rgb(var(--colors-background-paper-channel))",
+        },
+        foreground: "rgb(var(--colors-text-primary-channel))",
+
+        // 边框和其他
+        border: "rgb(var(--colors-palette-gray-300-channel))",
+        input: "rgb(var(--colors-palette-gray-300-channel))",
+        ring: "rgb(var(--colors-palette-primary-default-channel))",
       },
       opacity: createTailwinConfg("opacity"),
       borderRadius: createTailwinConfg("borderRadius"),

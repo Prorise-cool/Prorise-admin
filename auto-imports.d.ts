@@ -6,10 +6,6 @@
 // biome-ignore lint: disable
 export {};
 declare global {
-  const Button: typeof import("antd").Button;
-  const Divider: typeof import("antd").Divider;
-  const Space: typeof import("antd").Space;
-  const Typography: typeof import("antd").Typography;
   const createRef: typeof import("react").createRef;
   const forwardRef: typeof import("react").forwardRef;
   const lazy: typeof import("react").lazy;

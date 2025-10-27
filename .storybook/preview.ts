@@ -1,6 +1,6 @@
 import type { Preview } from "@storybook/react-vite";
 import "../src/index.css";
-import "../src/theme/theme.css";
+import "../src/theme/theme.css"; // Vanilla Extract: 源文件是 theme.css.ts，导入时去掉 .ts
 import { withThemeByDataAttribute } from "@storybook/addon-themes";
 import { HtmlDataAttribute, ThemeColorPresets } from "../src/theme/types/enum";
 // 1. 导入我们创建的 withTheme 装饰器

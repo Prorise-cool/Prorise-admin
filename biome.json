@@ -1,12 +1,22 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.2.6/schema.json",
   "vcs": {
-    "enabled": false,
+    "enabled": true,
     "clientKind": "git",
-    "useIgnoreFile": false
+    "useIgnoreFile": true
   },
   "files": {
-    "ignoreUnknown": false
+    "ignoreUnknown": false,
+    "includes": [
+      "**",
+      "!auto-imports.d.ts",
+      "!docs/.vitepress/cache",
+      "!docs/.vitepress/dist",
+      "!node_modules",
+      "!dist",
+      "!build",
+      "!storybook-static"
+    ]
   },
   "formatter": {
     "enabled": true,

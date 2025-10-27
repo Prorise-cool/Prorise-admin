@@ -1,0 +1,69 @@
+import { Meta, Story, Controls } from '@storybook/blocks';
+import * as ButtonStories from './button.stories';
+
+{/* [核心] Meta 标签是连接的桥梁。
+  'of={ButtonStories}' 告诉 Storybook：
+  1. 这个 MDX 文档是关于 ButtonStories.tsx 中定义的那个组件的。
+  2. 自动从 ButtonStories.tsx 的 meta 对象继承 argTypes、component 等信息。
+  3. 将 Storybook UI 中的 "Docs" 标签页替换为此文件的内容。
+*/}
+<Meta of={ButtonStories} />
+
+# Button 按钮
+
+按钮用于触发一个操作，是界面中最基础、最核心的交互元素。
+
+`Prorise-Admin` 的基础 `Button` 组件基于 `shadcn/ui` 和 `cva` 理念构建，
+提供了灵活的变体（variants）和尺寸（sizes）配置，并支持通过 `asChild` prop 实现多态渲染。
+
+## 基础用法 (Primary)
+
+这是按钮最基础的用法。你可以在下方的 Controls 面板中实时修改它的 `variant`、`size` 和 `children` 来查看所有组合。
+
+<Story of={ButtonStories.Primary} />
+
+## 风格变体 (Variants)
+
+我们提供了 6 种预设的视觉风格，以应对不同的业务场景。
+
+- `default`: 默认风格，用于主要操作。
+- `destructive`: 危险操作，如“删除”。
+- `outline`: 描边风格，用于次要操作。
+- `secondary`: 次要风格，视觉上比 `default` 弱。
+- `ghost`: 幽灵按钮，用于最弱的提示性操作。
+- `link`: 链接风格，看起来像一个链接。
+
+<div className="flex gap-4">
+<Story of={ButtonStories.Destructive} />
+<Story of={ButtonStories.Outline} />
+<Story of={ButtonStories.Secondary} />
+<Story of={ButtonStories.Ghost} />
+<Story of={ButtonStories.AsLink} />
+</ div>
+
+## 尺寸 (Sizes)
+
+我们提供三种标准尺寸，以及一种用于纯图标按钮的 `icon` 尺寸。
+
+- `lg`: 大尺寸 (h-11)
+- `default`: 默认尺寸 (h-10)
+- `sm`: 小尺寸 (h-9)
+
+<div className="flex gap-4">
+<Story of={ButtonStories.Large} />
+<Story of={ButtonStories.Small} />
+</div>
+## `asChild` 多态渲染
+
+通过 `asChild` prop，`Button` 组件可以将其样式和行为“附加”到它的直接子元素上。
+这在您需要一个**路由链接**（如 React Router 的 `<Link>`）同时又希望它**看起来像个按钮**时非常有用。
+
+<Story of={ButtonStories.AsLink} />
+
+
+## API 参考 (Props)
+
+以下是 `Button` 组件所有可用的 `props`。
+这份表格是根据组件的 TypeScript 接口 (`ButtonProps`) 和 `button.stories.tsx` 中的 `argTypes` 自动生成的。
+
+<Controls />

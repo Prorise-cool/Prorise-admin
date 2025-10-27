@@ -1,16 +1,18 @@
 /// <reference types="vitest/config" />
-import tailwindcss from "@tailwindcss/vite";
-import { vanillaExtractPlugin } from "@vanilla-extract/vite-plugin";
-import react from "@vitejs/plugin-react";
-import AutoImport from "unplugin-auto-import/vite";
-import antdResolver from "unplugin-auto-import-antd";
-import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
+
 // https://vitejs.dev/config/
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
+import tailwindcss from "@tailwindcss/vite";
+import { vanillaExtractPlugin } from "@vanilla-extract/vite-plugin";
+import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
+import AutoImport from "unplugin-auto-import/vite";
+import antdResolver from "unplugin-auto-import-antd";
+import { defineConfig } from "vite";
+import tsconfigPaths from "vite-tsconfig-paths";
+
 const dirname =
   typeof __dirname !== "undefined"
     ? __dirname
