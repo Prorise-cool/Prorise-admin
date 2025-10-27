@@ -30,53 +30,53 @@
 
 /* [1] 圆角系统 - 映射到我们的 borderRadius tokens */
 @theme inline {
-	/* 基础圆角 - 使用我们的 borderRadius.default (4px) 作为基准 */
-	--radius: var(--borderRadius-default);
+  /* 基础圆角 - 使用我们的 borderRadius.default (4px) 作为基准 */
+  --radius: var(--borderRadius-default);
 
-	/* 圆角变体 - 基于 radius 计算 */
-	--radius-sm: var(--borderRadius-sm);
-	--radius-md: var(--borderRadius-md);
-	--radius-lg: var(--borderRadius-lg);
-	--radius-xl: var(--borderRadius-xl);
+  /* 圆角变体 - 基于 radius 计算 */
+  --radius-sm: var(--borderRadius-sm);
+  --radius-md: var(--borderRadius-md);
+  --radius-lg: var(--borderRadius-lg);
+  --radius-xl: var(--borderRadius-xl);
 
-	/* [2] shadcn 颜色系统 → Tailwind 颜色前缀 */
-	/* Tailwind 需要 --color- 前缀才能识别为颜色 */
-	--color-background: var(--background);
-	--color-foreground: var(--foreground);
-	--color-card: var(--card);
-	--color-card-foreground: var(--card-foreground);
-	--color-popover: var(--popover);
-	--color-popover-foreground: var(--popover-foreground);
-	--color-primary: var(--primary);
-	--color-primary-foreground: var(--primary-foreground);
-	--color-secondary: var(--secondary);
-	--color-secondary-foreground: var(--secondary-foreground);
-	--color-muted: var(--muted);
-	--color-muted-foreground: var(--muted-foreground);
-	--color-accent: var(--accent);
-	--color-accent-foreground: var(--accent-foreground);
-	--color-destructive: var(--destructive);
-	--color-destructive-foreground: var(--destructive-foreground);
-	--color-border: var(--border);
-	--color-input: var(--input);
-	--color-ring: var(--ring);
+  /* [2] shadcn 颜色系统 → Tailwind 颜色前缀 */
+  /* Tailwind 需要 --color- 前缀才能识别为颜色 */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 
-	/* Chart 颜色 - 映射到我们的调色板 */
-	--color-chart-1: var(--chart-1);
-	--color-chart-2: var(--chart-2);
-	--color-chart-3: var(--chart-3);
-	--color-chart-4: var(--chart-4);
-	--color-chart-5: var(--chart-5);
+  /* Chart 颜色 - 映射到我们的调色板 */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
 
-	/* Sidebar 专用颜色 */
-	--color-sidebar-background: var(--sidebar-background);
-	--color-sidebar-foreground: var(--sidebar-foreground);
-	--color-sidebar-primary: var(--sidebar-primary);
-	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-	--color-sidebar-accent: var(--sidebar-accent);
-	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-	--color-sidebar-border: var(--sidebar-border);
-	--color-sidebar-ring: var(--sidebar-ring);
+  /* Sidebar 专用颜色 */
+  --color-sidebar-background: var(--sidebar-background);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }
 
 /* ========================================
@@ -87,67 +87,67 @@
   使用我们的 Vanilla Extract 生成的 CSS 变量
 */
 :root {
-	/* [1] 基础颜色 - 背景和前景 */
-	--background: var(--colors-background-default-value);
-	--foreground: var(--colors-text-primary-value);
+  /* [1] 基础颜色 - 背景和前景 */
+  --background: var(--colors-background-default-value);
+  --foreground: var(--colors-text-primary-value);
 
-	/* [2] 卡片颜色 */
-	--card: var(--colors-background-paper-value);
-	--card-foreground: var(--colors-text-primary-value);
+  /* [2] 卡片颜色 */
+  --card: var(--colors-background-paper-value);
+  --card-foreground: var(--colors-text-primary-value);
 
-	/* [3] Popover 颜色 */
-	--popover: var(--colors-background-paper-value);
-	--popover-foreground: var(--colors-text-primary-value);
+  /* [3] Popover 颜色 */
+  --popover: var(--colors-background-paper-value);
+  --popover-foreground: var(--colors-text-primary-value);
 
-	/* [4] 主色调 - 映射到我们的 primary 调色板 */
-	--primary: var(--colors-palette-primary-default-value);
-	--primary-foreground: var(--colors-common-white-value);
+  /* [4] 主色调 - 映射到我们的 primary 调色板 */
+  --primary: var(--colors-palette-primary-default-value);
+  --primary-foreground: var(--colors-common-white-value);
 
-	/* [5] 次要色调 - 使用中性灰色背景 */
-	--secondary: var(--colors-background-neutral-value);
-	--secondary-foreground: var(--colors-text-primary-value);
+  /* [5] 次要色调 - 使用中性灰色背景 */
+  --secondary: var(--colors-background-neutral-value);
+  --secondary-foreground: var(--colors-text-primary-value);
 
-	/* [6] 弱化色调 - 用于不太重要的元素 */
-	--muted: var(--colors-background-neutral-value);
-	--muted-foreground: var(--colors-text-secondary-value);
+  /* [6] 弱化色调 - 用于不太重要的元素 */
+  --muted: var(--colors-background-neutral-value);
+  --muted-foreground: var(--colors-text-secondary-value);
 
-	/* [7] 强调色调 - 用于需要吸引注意力的元素 */
-	--accent: var(--colors-background-neutral-value);
-	--accent-foreground: var(--colors-text-primary-value);
+  /* [7] 强调色调 - 用于需要吸引注意力的元素 */
+  --accent: var(--colors-background-neutral-value);
+  --accent-foreground: var(--colors-text-primary-value);
 
-	/* [8] 破坏性操作色 - 映射到 error 调色板 */
-	--destructive: var(--colors-palette-error-default-value);
-	--destructive-foreground: var(--colors-common-white-value);
+  /* [8] 破坏性操作色 - 映射到 error 调色板 */
+  --destructive: var(--colors-palette-error-default-value);
+  --destructive-foreground: var(--colors-common-white-value);
 
-	/* [9] 边框和输入框 - 使用 channel 支持透明度 */
-	--border: rgba(
-		var(--colors-palette-gray-500-channel) /
-		var(--opacity-border)
-	);
-	--input: rgba(var(--colors-palette-gray-500-channel) / var(--opacity-border));
+  /* [9] 边框和输入框 - 使用 channel 支持透明度 */
+  --border: rgba(
+    var(--colors-palette-gray-500-channel) /
+    var(--opacity-border)
+  );
+  --input: rgba(var(--colors-palette-gray-500-channel) / var(--opacity-border));
 
-	/* [10] 焦点环 - 使用 primary 色的淡化版 */
-	--ring: rgba(var(--colors-palette-primary-default-channel) / 0.3);
+  /* [10] 焦点环 - 使用 primary 色的淡化版 */
+  --ring: rgba(var(--colors-palette-primary-default-channel) / 0.3);
 
-	/* [11] 图表颜色 - 使用我们的调色板 */
-	--chart-1: var(--colors-palette-primary-default-value);
-	--chart-2: var(--colors-palette-info-default-value);
-	--chart-3: var(--colors-palette-warning-default-value);
-	--chart-4: var(--colors-palette-success-default-value);
-	--chart-5: var(--colors-palette-error-default-value);
+  /* [11] 图表颜色 - 使用我们的调色板 */
+  --chart-1: var(--colors-palette-primary-default-value);
+  --chart-2: var(--colors-palette-info-default-value);
+  --chart-3: var(--colors-palette-warning-default-value);
+  --chart-4: var(--colors-palette-success-default-value);
+  --chart-5: var(--colors-palette-error-default-value);
 
-	/* [12] Sidebar 颜色 */
-	--sidebar-background: var(--colors-background-paper-value);
-	--sidebar-foreground: var(--colors-text-primary-value);
-	--sidebar-primary: var(--colors-palette-primary-default-value);
-	--sidebar-primary-foreground: var(--colors-common-white-value);
-	--sidebar-accent: var(--colors-background-neutral-value);
-	--sidebar-accent-foreground: var(--colors-text-primary-value);
-	--sidebar-border: rgba(
-		var(--colors-palette-gray-500-channel) /
-		var(--opacity-border)
-	);
-	--sidebar-ring: rgba(var(--colors-palette-primary-default-channel) / 0.3);
+  /* [12] Sidebar 颜色 */
+  --sidebar-background: var(--colors-background-paper-value);
+  --sidebar-foreground: var(--colors-text-primary-value);
+  --sidebar-primary: var(--colors-palette-primary-default-value);
+  --sidebar-primary-foreground: var(--colors-common-white-value);
+  --sidebar-accent: var(--colors-background-neutral-value);
+  --sidebar-accent-foreground: var(--colors-text-primary-value);
+  --sidebar-border: rgba(
+    var(--colors-palette-gray-500-channel) /
+    var(--opacity-border)
+  );
+  --sidebar-ring: rgba(var(--colors-palette-primary-default-channel) / 0.3);
 }
 
 /* ========================================
@@ -158,68 +158,68 @@
   Vanilla Extract 会自动根据模式切换底层令牌的值
 */
 :root[data-theme-mode="dark"] {
-	/* [1] 基础颜色 - 暗色背景 */
-	--background: var(--colors-background-default-value);
-	--foreground: var(--colors-text-primary-value);
+  /* [1] 基础颜色 - 暗色背景 */
+  --background: var(--colors-background-default-value);
+  --foreground: var(--colors-text-primary-value);
 
-	/* [2] 卡片颜色 - 使用 paper 背景 */
-	--card: var(--colors-background-paper-value);
-	--card-foreground: var(--colors-text-primary-value);
+  /* [2] 卡片颜色 - 使用 paper 背景 */
+  --card: var(--colors-background-paper-value);
+  --card-foreground: var(--colors-text-primary-value);
 
-	/* [3] Popover 颜色 */
-	--popover: var(--colors-background-paper-value);
-	--popover-foreground: var(--colors-text-primary-value);
+  /* [3] Popover 颜色 */
+  --popover: var(--colors-background-paper-value);
+  --popover-foreground: var(--colors-text-primary-value);
 
-	/* [4] 主色调 - 暗色模式下保持鲜艳 */
-	--primary: var(--colors-palette-primary-default-value);
-	--primary-foreground: var(--colors-common-white-value);
+  /* [4] 主色调 - 暗色模式下保持鲜艳 */
+  --primary: var(--colors-palette-primary-default-value);
+  --primary-foreground: var(--colors-common-white-value);
 
-	/* [5] 次要色调 */
-	--secondary: var(--colors-background-neutral-value);
-	--secondary-foreground: var(--colors-text-primary-value);
+  /* [5] 次要色调 */
+  --secondary: var(--colors-background-neutral-value);
+  --secondary-foreground: var(--colors-text-primary-value);
 
-	/* [6] 弱化色调 */
-	--muted: var(--colors-background-neutral-value);
-	--muted-foreground: var(--colors-text-secondary-value);
+  /* [6] 弱化色调 */
+  --muted: var(--colors-background-neutral-value);
+  --muted-foreground: var(--colors-text-secondary-value);
 
-	/* [7] 强调色调 */
-	--accent: var(--colors-background-neutral-value);
-	--accent-foreground: var(--colors-text-primary-value);
+  /* [7] 强调色调 */
+  --accent: var(--colors-background-neutral-value);
+  --accent-foreground: var(--colors-text-primary-value);
 
-	/* [8] 破坏性操作色 */
-	--destructive: var(--colors-palette-error-default-value);
-	--destructive-foreground: var(--colors-common-white-value);
+  /* [8] 破坏性操作色 */
+  --destructive: var(--colors-palette-error-default-value);
+  --destructive-foreground: var(--colors-common-white-value);
 
-	/* [9] 边框和输入框 - 暗色模式下使用更高透明度 */
-	--border: rgba(var(--colors-common-white-channel) / 0.1);
-	--input: rgba(var(--colors-common-white-channel) / 0.15);
+  /* [9] 边框和输入框 - 暗色模式下使用更高透明度 */
+  --border: rgba(var(--colors-common-white-channel) / 0.1);
+  --input: rgba(var(--colors-common-white-channel) / 0.15);
 
-	/* [10] 焦点环 */
-	--ring: rgba(var(--colors-palette-primary-default-channel) / 0.5);
+  /* [10] 焦点环 */
+  --ring: rgba(var(--colors-palette-primary-default-channel) / 0.5);
 
-	/* [11] 图表颜色 - 保持与亮色模式一致 */
-	--chart-1: var(--colors-palette-primary-default-value);
-	--chart-2: var(--colors-palette-info-default-value);
-	--chart-3: var(--colors-palette-warning-default-value);
-	--chart-4: var(--colors-palette-success-default-value);
-	--chart-5: var(--colors-palette-error-default-value);
+  /* [11] 图表颜色 - 保持与亮色模式一致 */
+  --chart-1: var(--colors-palette-primary-default-value);
+  --chart-2: var(--colors-palette-info-default-value);
+  --chart-3: var(--colors-palette-warning-default-value);
+  --chart-4: var(--colors-palette-success-default-value);
+  --chart-5: var(--colors-palette-error-default-value);
 
-	/* [12] Sidebar 颜色 */
-	--sidebar-background: var(--colors-background-paper-value);
-	--sidebar-foreground: var(--colors-text-primary-value);
-	--sidebar-primary: var(--colors-palette-primary-default-value);
-	--sidebar-primary-foreground: var(--colors-common-white-value);
-	--sidebar-accent: var(--colors-background-neutral-value);
-	--sidebar-accent-foreground: var(--colors-text-primary-value);
-	--sidebar-border: rgba(var(--colors-common-white-channel) / 0.1);
-	--sidebar-ring: rgba(var(--colors-palette-primary-default-channel) / 0.5);
+  /* [12] Sidebar 颜色 */
+  --sidebar-background: var(--colors-background-paper-value);
+  --sidebar-foreground: var(--colors-text-primary-value);
+  --sidebar-primary: var(--colors-palette-primary-default-value);
+  --sidebar-primary-foreground: var(--colors-common-white-value);
+  --sidebar-accent: var(--colors-background-neutral-value);
+  --sidebar-accent-foreground: var(--colors-text-primary-value);
+  --sidebar-border: rgba(var(--colors-common-white-channel) / 0.1);
+  --sidebar-ring: rgba(var(--colors-palette-primary-default-channel) / 0.5);
 }
 
 @layer base {
-	* {
-		@apply border-border outline-ring/50;
-	}
-	body {
-		@apply bg-background text-foreground;
-	}
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }

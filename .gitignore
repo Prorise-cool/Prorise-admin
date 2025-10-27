@@ -19,6 +19,15 @@ auto-imports.d.ts
 docs/.vitepress/cache
 docs/.vitepress/dist
 
+# svg - 自动生成的图标组件
+src/components/icons/*.tsx
+src/components/icons/index.ts
+# 保留手动管理的 logos 子目录和其他配置文件
+!src/components/icons/logos/
+!src/components/icons/Icon.tsx
+!src/components/icons/Icon.stories.tsx
+!src/components/icons/register-icons.ts
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -32,3 +41,5 @@ docs/.vitepress/dist
 
 *storybook.log
 storybook-static
+
+

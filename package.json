@@ -24,10 +24,12 @@
     "test:coverage": "vitest --coverage",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:preview": "vitepress preview docs",
+    "build:icons": "svgr ./src/assets/icons --out-dir ./src/components/icons --config-file ./.svgrrc.js"
   },
   "prepare": "lefthook install",
   "dependencies": {
+    "@iconify/react": "^6.0.2",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-slot": "^1.2.3",
     "@storybook/test": "^8.6.14",
@@ -59,6 +61,7 @@
     "@storybook/addon-vitest": "9.1.15",
     "@storybook/blocks": "^8.6.14",
     "@storybook/react-vite": "9.1.15",
+    "@svgr/cli": "^8.1.0",
     "@tailwindcss/vite": "^4.1.14",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
