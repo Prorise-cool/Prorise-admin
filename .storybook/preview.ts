@@ -2,7 +2,11 @@ import type { Preview } from "@storybook/react-vite";
 import "../src/index.css";
 import "../src/theme/theme.css"; // Vanilla Extract: 源文件是 theme.css.ts，导入时去掉 .ts
 import { withThemeByDataAttribute } from "@storybook/addon-themes";
-import { HtmlDataAttribute, ThemeColorPresets } from "../src/theme/types/enum";
+import {
+  HtmlDataAttribute,
+  ThemeColorPresets,
+  ThemeMode,
+} from "../src/theme/types/enum";
 // 1. 导入我们创建的 withTheme 装饰器
 import { withTheme } from "../src/theme/withTheme";
 
@@ -52,27 +56,27 @@ const preview: Preview = {
   decorators: [
     // // 亮/暗模式切换 - 通过 data-theme-mode 属性控制
     // 由于插件顶栏不适配两种模式的切换，一般我们要测试亮暗色就取消这个注释即可
-    // withThemeByDataAttribute({
-    // 	themes: {
-    // 		light: ThemeMode.Light,
-    // 		dark: ThemeMode.Dark,
-    // 	},
-    // 	defaultTheme: ThemeMode.Light,
-    // 	attributeName: HtmlDataAttribute.ThemeMode,
-    // }),
-    // 颜色预设切换 - 通过 data-color-palette 属性控制
     withThemeByDataAttribute({
       themes: {
-        default: ThemeColorPresets.Default,
-        cyan: ThemeColorPresets.Cyan,
-        purple: ThemeColorPresets.Purple,
-        blue: ThemeColorPresets.Blue,
-        orange: ThemeColorPresets.Orange,
-        red: ThemeColorPresets.Red,
+        light: ThemeMode.Light,
+        dark: ThemeMode.Dark,
       },
-      defaultTheme: ThemeColorPresets.Default,
-      attributeName: HtmlDataAttribute.ColorPalette,
+      defaultTheme: ThemeMode.Light,
+      attributeName: HtmlDataAttribute.ThemeMode,
     }),
+    // // 颜色预设切换 - 通过 data-color-palette 属性控制
+    // withThemeByDataAttribute({
+    //   themes: {
+    //     default: ThemeColorPresets.Default,
+    //     cyan: ThemeColorPresets.Cyan,
+    //     purple: ThemeColorPresets.Purple,
+    //     blue: ThemeColorPresets.Blue,
+    //     orange: ThemeColorPresets.Orange,
+    //     red: ThemeColorPresets.Red,
+    //   },
+    //   defaultTheme: ThemeColorPresets.Default,
+    //   attributeName: HtmlDataAttribute.ColorPalette,
+    // }),
     // 保留原有的 ThemeProvider 装饰器
     withTheme,
   ],
