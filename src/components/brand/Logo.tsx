@@ -1,5 +1,5 @@
+import { Link } from "react-router-dom";
 import { cn } from "@/utils/cn";
-// 1. (关键) 只导入 Icon 组件。不导入 'react-router-dom'。
 import { Icon } from "../icons/Icon";
 
 interface Props {
@@ -15,7 +15,7 @@ interface Props {
 function Logo({ width = 50, height = 50, className }: Props) {
   return (
     // 根元素是一个 span (或 div)，并应用传入的 className。
-    <span className={cn(className)}>
+    <Link className={cn(className)} to="/">
       {/*
           消费 <Icon /> 组件
              - icon="local:ic-logo-badge"：调用已注册的本地图标
@@ -28,7 +28,7 @@ function Logo({ width = 50, height = 50, className }: Props) {
         height={height}
         color="var(--colors-palette-primary-default)"
       />
-    </span>
+    </Link>
   );
 }
 
