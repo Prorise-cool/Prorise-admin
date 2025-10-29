@@ -1,11 +1,21 @@
+import { lazy } from "react";
 import type { RouteObject } from "react-router-dom";
 
-// 仪表盘相关的路由将在后续章节 (如第 12 章布局) 添加
+// 动态导入 DashboardLayout
+const LazyDashboardLayout = lazy(() => import("@/layouts/dashboard"));
+
+// 动态导入 Welcome 页面
+const LazyWelcomePage = lazy(() => import("@/pages/Welcome"));
+
 export const dashboardRoutes: RouteObject[] = [
-  // Example (commented out):
-  // {
-  //   path: 'dashboard',
-  //   element: <LazyDashboardLayout />,
-  //   children: [ /* ... */ ]
-  // }
+  {
+    path: "/",
+    element: <LazyDashboardLayout />,
+    children: [
+      {
+        index: true,
+        element: <LazyWelcomePage />,
+      },
+    ],
+  },
 ];

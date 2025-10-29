@@ -59,6 +59,18 @@ export default {
       spacing: createTailwinConfg("spacing"),
       zIndex: createTailwinConfg("zIndex"),
 
+      height: {
+        "layout-header": "var(--layout-header-height)",
+        "layout-nav-horizontal": "var(--layout-nav-height-horizontal)",
+        "layout-multi-tabs": "var(--layout-multi-tabs-height)",
+      },
+      width: {
+        // 'w-layout-nav' 将消费 'var(--layout-nav-width)' (260px)
+        "layout-nav": "var(--layout-nav-width)",
+        // 'w-layout-nav-mini' 将消费 'var(--layout-nav-width-mini)' (88px)
+        "layout-nav-mini": "var(--layout-nav-width-mini)",
+      },
+
       // 意图：对于断点，我们不需要 var() 引用，而是直接使用其值。
       // 因此直接导入并赋值即可。
       screens: breakpointsTokens,

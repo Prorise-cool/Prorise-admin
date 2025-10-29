@@ -1,13 +1,14 @@
-import { createBrowserRouter, type RouteObject } from "react-router-dom";
 import { lazy } from "react";
-
-// 1. 导入各个 sections 文件导出的路由数组
-import { mainRoutes } from "./sections/main";
+import { createBrowserRouter, type RouteObject } from "react-router-dom";
 import { authRoutes } from "./sections/auth";
 import { dashboardRoutes } from "./sections/dashboard";
+import { devRoutes } from "./sections/dev"; // <--- 新增：导入开发路由
+// 1. 导入各个 sections 文件导出的路由数组
+import { mainRoutes } from "./sections/main";
 
 // 2. 导入根布局组件 (保持懒加载)
 const LazyMyApp = lazy(() => import("@/MyApp"));
+
 // 3. 导入基础错误边界组件
 import ErrorBoundary from "./components/error-boundary";
 
@@ -23,6 +24,7 @@ const rootRoute: RouteObject = {
     //    mainRoutes (包含 index 和 404) 放在最后作为默认和回退
     ...authRoutes,
     ...dashboardRoutes,
+    ...devRoutes, // <--- 新增：在这里合并开发路由
     // ... 未来可以添加更多 sections, e.g., ...userProfileRoutes
     ...mainRoutes,
   ],

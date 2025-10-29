@@ -1,3 +1,4 @@
+// src/components/brand/Logo.tsx
 import { Link } from "react-router-dom";
 import { cn } from "@/utils/cn";
 import { Icon } from "../icons/Icon";

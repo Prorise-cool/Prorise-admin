@@ -6,6 +6,7 @@
 // biome-ignore lint: disable
 export {}
 declare global {
+  const Layout: typeof import('antd').Layout
   const createRef: typeof import('react').createRef
   const forwardRef: typeof import('react').forwardRef
   const lazy: typeof import('react').lazy

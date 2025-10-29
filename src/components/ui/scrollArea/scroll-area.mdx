@@ -1,0 +1,39 @@
+import { Meta, Story, Controls } from '@storybook/blocks';
+import * as ScrollAreaStories from './scroll-area.stories';
+
+{/* [核心] 关联 .stories.tsx 文件，并替换 Docs 标签页 */}
+<Meta of={ScrollAreaStories} />
+
+# ScrollArea 滚动区域
+
+`ScrollArea` 是对 Radix UI Scroll Area 原语的封装，用于在内容溢出时提供
+与 `Prorise-Admin` 主题系统（`bg-border`）一致的、跨平台的美观滚动条。
+
+## 为什么需要封装？
+
+在企业级项目中，我们不能依赖浏览器丑陋且不一致的原生滚动条（尤其是 Windows）。
+`src/ui/scrollArea` 的职责是：
+1.  **视觉一致性**：强制所有平台显示与主题统一的纤细滚动条。
+2.  **API 封装**：将 Radix 复杂的原语组合成一个易用的 API。
+3.  **可维护性**：为项目提供一个单一的滚动条依赖源。
+
+## 基础用法（垂直）
+
+默认情况下，`ScrollArea` 提供垂直滚动条。
+**你必须** 为 `ScrollArea` 组件提供一个 `className` 来 **约束其高度**（例如 `h-[300px]`），否则它将无限拉伸，无法触发滚动。
+
+<Story of={ScrollAreaStories.Primary} />
+
+## 水平滚动
+
+通过设置 `orientation="horizontal"`，可以启用水平滚动。
+此时，你必须约束其**宽度**（例如 `w-[400px]`），并通常需要为子元素设置 `whitespace-nowrap` 以防止内容换行。
+
+<Story of={ScrollAreaStories.Horizontal} />
+
+## API 参考 (Props)
+
+以下是 `ScrollArea` 组件所有可用的 `props`。
+这份表格是根据组件的 TypeScript 接口和 `scroll-area.stories.tsx` 中的 `argTypes` 自动生成的。
+
+<Controls />
